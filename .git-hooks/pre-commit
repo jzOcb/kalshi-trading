@@ -1,0 +1,21 @@
+#!/bin/bash
+# Kalshi Pre-commit Hook
+# Ensures deployment verification passes before allowing commits
+
+# Only run if kalshi files changed
+if git diff --cached --name-only | grep -q "^kalshi/"; then
+    echo "🔍 Kalshi files changed, running deployment verification..."
+    
+    if bash /home/clawdbot/clawd/kalshi/.deployment-check.sh; then
+        echo "✅ Deployment checks passed"
+        exit 0
+    else
+        echo ""
+        echo "❌ Deployment verification failed!"
+        echo "Fix the issues above or use --no-verify to skip (not recommended)"
+        exit 1
+    fi
+fi
+
+# No kalshi changes, allow commit
+exit 0
