@@ -92,6 +92,34 @@ python3 paper_trading.py summary
 - 规则模糊 = 拒绝
 - Edge小(<5%) = 不值得
 
+### ⚠️ 铁律：Report必须查证！(2026-02-02)
+**每次给用户发送report/推荐时，必须验证底层事实：**
+
+1. **数据是否已发布？** — 比如GDP市场，BEA是否已发布实际数字？CPI市场，BLS是否已发布？
+2. **如果已发布，实际数字是多少？** — 直接告诉用户结果，这才是"free money"
+3. **如果未发布，发布日期是什么时候？** — 告诉用户还有不确定性
+4. **确定性评估** — 基于已知事实，这个bet有多确定？
+
+**禁止：**
+- ❌ 只看价格就推荐（"91¢所以几乎确定"是错误逻辑）
+- ❌ 让用户自己去查证（报告的价值就在于已验证的信息）
+- ❌ 把未验证的信息当确定性推荐
+
+**正确流程：**
+```
+1. 扫描市场找到候选
+2. 查证底层数据（BEA/BLS/Fed/官方来源）
+3. 标注：✅已确认 / ⏳待发布(日期) / ⚠️需验证
+4. 只有✅已确认的才标为高信心推荐
+```
+
+**数据源查证清单：**
+- GDP → BEA (bea.gov/data/gdp) 
+- CPI → BLS (bls.gov/cpi)
+- Fed Rate → Federal Reserve (federalreserve.gov)
+- Government Shutdown → OPM (opm.gov)
+- 其他 → 在report中注明数据源和状态
+
 ## Automation
 
 ### Daily Scan via Cron

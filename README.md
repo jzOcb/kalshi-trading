@@ -37,6 +37,16 @@ Scans Kalshi political and economic prediction markets to find data-driven tradi
 - **Settlement Monitoring** — Tracks pending positions and calculates P&L
 - **Accuracy Validation** — Only move to real trading after >70% win rate over 20+ trades
 
+### 🆕 Real-Time WebSocket Streaming
+- **Live Ticker Updates** — Real-time price changes, spreads, volume
+- **Orderbook Streaming** — Full depth + incremental updates
+- **Trade Notifications** — All market executions as they happen
+- **Fill Alerts** — Your own order executions (authenticated)
+- **Auto-Reconnection** — Resilient connection with exponential backoff
+- **Data Persistence** — SQLite storage for historical analysis
+- **See:** [WEBSOCKET-README.md](WEBSOCKET-README.md) for details
+
+
 ### Automation Ready
 - **Cron Integration** — Daily scans with isolated sessions
 - **Heartbeat Mode** — Integrated checks in your main agent session

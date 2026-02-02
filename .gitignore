@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+data/
+state.json
+dynamic_state.json
+trades.json
+trades_backup_*.json
+scan-*.md
+*.flag
+/tmp/

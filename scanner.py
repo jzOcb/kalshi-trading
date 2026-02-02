@@ -1,5 +1,3 @@
-exec(open('/tmp/sandbox_bootstrap.py').read())
-
 import requests
 import json
 import sys

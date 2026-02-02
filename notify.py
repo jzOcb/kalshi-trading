@@ -1,70 +1,102 @@
-exec(open('/tmp/sandbox_bootstrap.py').read())
-
 """
 Kalshi Scanner → Telegram-friendly report
-Outputs a clean, concise summary for messaging.
-
-⚠️ CRITICAL: This scanner only does PRICE-LEVEL analysis.
-Every recommendation MUST go through deep research (news, data sources,
-procedural constraints) before being sent to Jason.
-See kalshi/README.md for the mandatory research checklist.
+铁律：每个推荐必须查证底层事实！
+Uses report_v2's scoring/verification for junk bond candidates.
 """
 
 import requests
 import json
 import os
 import sys
-from datetime import datetime, timezone, timedelta
+import time
+from datetime import datetime, timezone
+
+# Import decision engine from report_v2
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from report_v2 import (
+    fetch_market_details, analyze_rules, score_market,
+    search_news, format_vol, kalshi_url
+)
 
 API_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 
 POLITICAL_SERIES = [
-    # ---- HIGH PRIORITY (from discovery.py priority list) ----
     "KXGDP", "KXCPI", "KXFED", "KXGOVSHUTLENGTH",
     "KXTRUMPMEETING", "KXGREENLAND", "KXSCOTUS", "KXRECESSION",
     "KXUKRAINE", "KXIRAN", "KXBITCOIN", "KXSP500", "KXDOGE",
     "KXGOVTCUTS", "KXGOVTSPEND", "KXDEBT", "KXCR",
     "KXSHUTDOWNBY", "KXTARIFF", "KXFEDRATE",
     "KXCABINET", "KXTERMINALRATE", "KXLOWESTRATE",
-    
-    # ---- Trump / White House ----
-    "KXTRUMPSAYNICKNAME", "KXTRUMPRESIGN", "KXTRUMPREMOVE",
-    "KXTRUMPPARDONFAMILY", "KXTRUMPAGCOUNT", "KXEOTRUMPTERM",
-    "KXTRUMPAPPROVALYEAR", "KXTRUMPPRES", "KXTRUMPRUN",
-    "KXIMPEACH", "KXMARTIAL", "KXNEXTPRESSEC", "KXNEXTDHSSEC",
-    
-    # ---- Congress / Legislation ----
-    "KXDEBTGROWTH", "KXACAREPEAL", "KXFREEIVF", "KXTAFTHARTLEY",
-    "KXBALANCEPOWERCOMBO", "KXCAPCONTROL", "KXDOED",
-    
-    # ---- SCOTUS / Legal ----
-    "KXSCOTUSPOWER", "KXJAN6CASES", "KXOBERGEFELL",
-    
-    # ---- Economy ----
-    "KXUSDEBT", "KXLCPIMAXYOY",
-    "KXFEDCHAIRNOM", "KXFEDEMPLOYEES", "KXTRILLIONAIRE",
-    
-    # ---- Foreign Policy / Geopolitics ----
-    "KXKHAMENEIOUT", "KXGREENTERRITORY", "KXGREENLANDPRICE",
-    "KXCANAL", "KXNEWPOPE", "KXFULLTERMSKPRES",
-    "KXNEXTIRANLEADER", "KXPUTINDJTLOCATION",
-    "KXWITHDRAW", "KXUSAKIM", "KXRECOGSOMALI",
-    "KXFTA", "KXDJTVOSTARIFFS", "KXZELENSKYPUTIN",
-    
-    # ---- Elections ----
-    "KXPRESNOMD", "KXVPRESNOMD", "KXPRESPARTY",
-    "KXHOUSERACE", "KXMUSKPRIMARY", "KXAOCSENATE",
-    "CONTROLH", "POWER",
-    
-    # ---- IPOs / Markets ----
-    "KXIPOSPACEX", "KXIPOFANNIE", "KXSPACEXBANKPUBLIC",
-    
-    # ---- Tariffs (deduped) ----
-    "KXTARIFFS",
-    
-    # ---- Bills ----
-    "KXBILLSIGNED", "KXTRUMPBILLSSIGNED",
 ]
+
+# --- Fact Verification (official sources) ---
+def verify_facts():
+    """Fetch key data points from official sources."""
+    facts = {}
+    
+    # GDP - BEA
+    try:
+        r = requests.get("https://www.bea.gov/data/gdp/gross-domestic-product", timeout=10)
+        text = r.text.lower()
+        import re
+        if "fourth quarter" in text or "4th quarter" in text:
+            facts["gdp_q4_status"] = "✅ Released"
+        else:
+            facts["gdp_q4_status"] = "⏳ Not yet (Feb 20)"
+        pct = re.findall(r'(\d+\.\d+)\s*percent', text)
+        if pct:
+            facts["gdp_latest_pct"] = pct[0]
+        if "third quarter" in text:
+            facts["gdp_latest_q"] = "Q3 2025"
+        elif "fourth quarter" in text:
+            facts["gdp_latest_q"] = "Q4 2025"
+    except:
+        facts["gdp_q4_status"] = "⚠️ Could not verify"
+    
+    # CPI - BLS
+    try:
+        r = requests.get("https://www.bls.gov/cpi/", timeout=10)
+        text = r.text.lower()
+        if "january 2026" in text:
+            facts["cpi_jan_status"] = "✅ Jan 2026 released"
+        elif "december 2025" in text:
+            facts["cpi_jan_status"] = "⏳ Jan CPI not yet (Feb ~12)"
+        else:
+            facts["cpi_jan_status"] = "⚠️ Check bls.gov/cpi"
+    except:
+        facts["cpi_jan_status"] = "⚠️ Could not verify"
+    
+    # Govt shutdown - OPM
+    try:
+        r = requests.get("https://www.opm.gov/policy-data-oversight/snow-dismissal-procedures/current-status/", timeout=10)
+        text = r.text.lower()
+        if "shut down" in text or "shutdown" in text or "lapse" in text:
+            facts["shutdown"] = "✅ Shutdown active"
+        elif "open" in text:
+            facts["shutdown"] = "✅ Govt open"
+        else:
+            facts["shutdown"] = "⚠️ Check opm.gov"
+    except:
+        facts["shutdown"] = "⚠️ Could not verify"
+    
+    return facts
+
+def fact_tag(ticker, facts):
+    """Return fact verification line for a ticker."""
+    t = ticker.upper()
+    if "KXGDP" in t:
+        s = facts.get("gdp_q4_status", "⚠️")
+        q = facts.get("gdp_latest_q", "?")
+        p = facts.get("gdp_latest_pct", "?")
+        return f"📋 {s} | Latest: {q} @ {p}%"
+    elif "KXCPI" in t:
+        return f"📋 {facts.get('cpi_jan_status', '⚠️')}"
+    elif "KXGOVSHUT" in t:
+        return f"📋 {facts.get('shutdown', '⚠️')}"
+    elif "KXFED" in t:
+        return "📋 ⏳ Check federalreserve.gov"
+    return None
+
 
 def api_get(endpoint, params=None):
     try:
@@ -77,28 +109,28 @@ def api_get(endpoint, params=None):
 def scan():
     now = datetime.now(timezone.utc)
     
-    # Load previous state for comparison
+    # Load previous state
     state_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "state.json")
     prev_state = {}
-    for sp in [state_path, "/tmp/kalshi_state.json"]:
-        try:
-            with open(sp) as f:
-                prev_state = json.load(f)
-            break
-        except:
-            pass
+    try:
+        with open(state_path) as f:
+            prev_state = json.load(f)
+    except:
+        pass
     prev_prices = prev_state.get("prices", {})
     
-    # Fetch markets
+    # Step 1: Quick scan all markets
     all_markets = []
     for series in POLITICAL_SERIES:
         data = api_get("/markets", {"limit": 50, "status": "open", "series_ticker": series})
         if data:
             all_markets.extend(data.get("markets", []))
     
-    # Analyze
-    junk_bonds = []
-    alerts = []
+    # Step 2: Verify facts from official sources
+    facts = verify_facts()
+    
+    # Step 3: Find junk bond candidates + movers
+    junk_candidates = []
     movers = []
     current_prices = {}
     
@@ -119,39 +151,24 @@ def scan():
         prev = m.get("previous_price", price)
         vol = m.get("volume_24h", 0)
         spread = (m.get("yes_ask", 0) - m.get("yes_bid", 0)) if m.get("yes_ask") else 99
-        title = m.get("title", "")
-        sub = m.get("yes_sub_title", "") or m.get("no_sub_title", "")
+        title = m.get("title", "").replace("**", "")
         
         current_prices[ticker] = price
+        name = title if title else (m.get("yes_sub_title", "") or m.get("no_sub_title", ""))
+        if len(name) > 60:
+            name = name[:57] + "..."
         
-        # Short name
-        name = sub if sub else title
-        if len(name) > 50:
-            name = name[:47] + "..."
-        
-        # Junk bond (60 day horizon)
+        # Junk bond candidate
         if (price >= 85 or price <= 12) and days <= 60 and spread <= 15:
             side = "YES" if price >= 85 else "NO"
             cost = price if price >= 85 else (100 - price)
             ret = ((100 - cost) / cost) * 100 if cost > 0 else 0
             ann = (ret / max(days, 1)) * 365
-            if ret >= 3:  # at least 3% return
-                junk_bonds.append({
-                    "name": name, "side": side, "cost": cost,
+            if ret >= 3:
+                junk_candidates.append({
+                    "market": m, "name": name, "side": side, "cost": cost,
                     "ret": ret, "ann": ann, "days": days,
                     "spread": spread, "vol": vol, "ticker": ticker,
-                })
-        
-        # Price movement alert (vs last scan)
-        last_price = prev_prices.get(ticker)
-        if last_price is not None:
-            delta = abs(price - last_price)
-            if delta >= 5:
-                d = "📈" if price > last_price else "📉"
-                alerts.append({
-                    "name": name, "old": last_price, "new": price,
-                    "delta": delta, "icon": d, "vol": vol,
-                    "days": days, "ticker": ticker,
                 })
         
         # 24h movers
@@ -160,84 +177,120 @@ def scan():
             movers.append({
                 "name": name, "old": prev, "new": price,
                 "delta": abs(price - prev), "icon": d,
-                "vol": vol, "days": days, "ticker": ticker,
+                "vol": vol, "ticker": ticker,
             })
     
-    # Sort
-    junk_bonds.sort(key=lambda x: -x["ann"])
-    alerts.sort(key=lambda x: -x["delta"])
+    # Step 4: Deep verify top junk bonds using report_v2 scoring
+    junk_candidates.sort(key=lambda x: -x["ann"])
+    scored_junks = []
+    for jc in junk_candidates[:15]:  # Only deep-analyze top 15
+        m = jc["market"]
+        ticker = jc["ticker"]
+        # Fetch rules
+        detailed = fetch_market_details(ticker)
+        if detailed:
+            m["rules_primary"] = detailed.get("rules_primary", "")
+            m["rules_secondary"] = detailed.get("rules_secondary", "")
+        result = score_market(m)
+        if result:
+            jc["score"] = result["score"]
+            jc["decision"] = result["decision"]
+            jc["reasons"] = result["reasons"]
+        else:
+            jc["score"] = 0
+            jc["decision"] = "🔴 SKIP"
+            jc["reasons"] = ["未通过评分"]
+        scored_junks.append(jc)
+        time.sleep(0.15)  # Rate limit
+    
     movers.sort(key=lambda x: -x["delta"])
     
-    # Format Telegram message
+    # Step 5: Format report
     lines = []
     lines.append(f"⚡ Kalshi Scan — {now.strftime('%m/%d %H:%M UTC')}")
-    lines.append(f"Markets: {len(all_markets)}")
+    lines.append(f"Markets: {len(all_markets)} | Analyzed: {len(scored_junks)}")
     lines.append("")
     
-    # Alerts (price changes since last scan)
-    if alerts:
-        lines.append("🚨 SINCE LAST SCAN")
-        for a in alerts[:5]:
-            lines.append(f"{a['icon']} {a['name']}")
-            lines.append(f"   {a['old']}¢→{a['new']}¢ (Δ{a['delta']}¢) vol:{a['vol']}")
-        lines.append("")
+    # Group by decision
+    buys = [j for j in scored_junks if "BUY" in j.get("decision", "")]
+    waits = [j for j in scored_junks if "WAIT" in j.get("decision", "")]
+    skips = [j for j in scored_junks if "SKIP" in j.get("decision", "")]
     
-    # Top junk bonds
-    if junk_bonds:
-        lines.append(f"🎯 JUNK BONDS ({len(junk_bonds)})")
-        for jb in junk_bonds[:8]:
-            emoji = "🔥" if jb["ann"] >= 100 else "✅"
-            lines.append(f"{emoji} {jb['side']}@{jb['cost']}¢ +{jb['ret']:.0f}% / {jb['days']}d ({jb['ann']:.0f}%ann)")
-            lines.append(f"   {jb['name']}")
-            lines.append(f"   sp:{jb['spread']} vol:{jb['vol']}")
+    if buys:
+        lines.append(f"🟢 BUY ({len(buys)})")
         lines.append("")
+        for jb in buys[:5]:
+            ticker = jb['ticker']
+            event_ticker = '-'.join(ticker.rsplit('-', 1)[0:1]) if '-' in ticker else ticker
+            lines.append(f"🟢 {jb['name']}")
+            lines.append(f"   {jb['side']}@{jb['cost']}¢ → +{jb['ret']:.0f}% / {jb['days']}d ({jb['ann']:.0f}%ann)")
+            lines.append(f"   Score: {jb['score']}/100 | {' | '.join(jb['reasons'][:3])}")
+            ft = fact_tag(ticker, facts)
+            if ft:
+                lines.append(f"   {ft}")
+            lines.append(f"   vol:{jb['vol']} | 🔗 https://kalshi.com/events/{event_ticker}")
+            lines.append("")
+    
+    if waits:
+        lines.append(f"🟡 WAIT ({len(waits)})")
+        lines.append("")
+        for jb in waits[:5]:
+            ticker = jb['ticker']
+            event_ticker = '-'.join(ticker.rsplit('-', 1)[0:1]) if '-' in ticker else ticker
+            lines.append(f"🟡 {jb['name']}")
+            lines.append(f"   {jb['side']}@{jb['cost']}¢ → +{jb['ret']:.0f}% / {jb['days']}d ({jb['ann']:.0f}%ann)")
+            lines.append(f"   Score: {jb['score']}/100 | {' | '.join(jb['reasons'][:3])}")
+            ft = fact_tag(ticker, facts)
+            if ft:
+                lines.append(f"   {ft}")
+            lines.append(f"   vol:{jb['vol']} | 🔗 https://kalshi.com/events/{event_ticker}")
+            lines.append("")
+    
+    if not buys and not waits:
+        # Show top skips so user knows what was rejected and why
+        lines.append(f"🔴 No recommendations — top candidates rejected:")
+        lines.append("")
+        for jb in skips[:5]:
+            ticker = jb['ticker']
+            event_ticker = '-'.join(ticker.rsplit('-', 1)[0:1]) if '-' in ticker else ticker
+            lines.append(f"🔴 {jb['name']}")
+            lines.append(f"   {jb['side']}@{jb['cost']}¢ → +{jb['ret']:.0f}% / {jb['days']}d ({jb['ann']:.0f}%ann)")
+            lines.append(f"   Score: {jb['score']}/100 | {' | '.join(jb['reasons'][:3])}")
+            ft = fact_tag(ticker, facts)
+            if ft:
+                lines.append(f"   {ft}")
+            lines.append(f"   🔗 https://kalshi.com/events/{event_ticker}")
+            lines.append("")
     
     # 24h movers
     if movers:
         lines.append(f"🔥 24H MOVERS ({len(movers)})")
+        lines.append("")
         for mv in movers[:5]:
+            event_ticker = '-'.join(mv['ticker'].rsplit('-', 1)[0:1]) if '-' in mv['ticker'] else mv['ticker']
             lines.append(f"{mv['icon']} {mv['name']}")
             lines.append(f"   {mv['old']}¢→{mv['new']}¢ (Δ{mv['delta']}¢) vol:{mv['vol']}")
-        lines.append("")
+            lines.append(f"   🔗 https://kalshi.com/events/{event_ticker}")
+            lines.append("")
     
-    if not junk_bonds and not alerts and not movers:
+    if not scored_junks and not movers:
         lines.append("😴 Nothing notable right now")
     
     report = "\n".join(lines)
     
-    # Save state (try multiple paths for sandbox compatibility)
+    # Save state
     new_state = {
         "last_scan": now.isoformat(),
         "prices": current_prices,
         "markets_count": len(all_markets),
-        "junk_bonds_count": len(junk_bonds),
     }
-    for sp in [state_path, "/tmp/kalshi_state.json"]:
-        try:
-            with open(sp, "w") as f:
-                json.dump(new_state, f, indent=2)
-            break
-        except:
-            pass
+    try:
+        with open(state_path, "w") as f:
+            json.dump(new_state, f, indent=2)
+    except:
+        pass
     
-    return report, len(alerts), len(junk_bonds), junk_bonds, movers
+    return report
 
 if __name__ == "__main__":
-    report, n_alerts, n_jb, jb_list, movers_list = scan()
-    print(report)
-    
-    # If --research flag, auto-research top opportunities
-    if "--research" in sys.argv and jb_list:
-        from research import research_market
-        print("\n" + "=" * 60)
-        print("🔍 AUTO-RESEARCH: Top Junk Bonds")
-        print("=" * 60)
-        for jb in jb_list[:3]:
-            ticker = jb["ticker"]
-            name = jb["name"]
-            try:
-                r = research_market(ticker, name)
-                print(f"\n{r}")
-            except Exception as e:
-                print(f"\n⚠️ Research failed for {ticker}: {e}")
-            print("-" * 60)
+    print(scan())
