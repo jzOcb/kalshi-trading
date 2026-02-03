@@ -88,12 +88,22 @@ class KalshiWebSocketClient:
                 logger.info("Connecting without authentication (public channels only)...")
             
             # Connect to WebSocket
-            self.ws = await websockets.connect(
-                self.ws_url,
-                extra_headers=headers,
-                ping_interval=20,  # Send ping every 20s
-                ping_timeout=10    # Wait 10s for pong
-            )
+            # websockets v16+ uses additional_headers; older versions use extra_headers
+            try:
+                self.ws = await websockets.connect(
+                    self.ws_url,
+                    additional_headers=headers,
+                    ping_interval=20,  # Send ping every 20s
+                    ping_timeout=10    # Wait 10s for pong
+                )
+            except TypeError:
+                # Fallback for older websockets versions
+                self.ws = await websockets.connect(
+                    self.ws_url,
+                    extra_headers=headers,
+                    ping_interval=20,
+                    ping_timeout=10
+                )
             
             self.connected = True
             self.reconnect_delay = 1  # Reset reconnect delay on success

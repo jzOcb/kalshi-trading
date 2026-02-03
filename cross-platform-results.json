@@ -1,0 +1,231 @@
+{
+  "scan_time": "2026-02-03T13:17:42.573694+00:00",
+  "known_pairs": [
+    {
+      "pair_name": "\ud83c\udfdb\ufe0f Government Shutdown",
+      "kalshi_ticker": "KXGOVSHUTLENGTH-26FEB28-4D",
+      "kalshi_title": "Will the federal government shut down for more than 4 days?",
+      "kalshi_yes": 15,
+      "kalshi_volume": 3974273,
+      "poly_title": "Will the government shutdown last 4 days or more?",
+      "poly_yes": 100.0,
+      "poly_volume": 4389035.691402,
+      "match_score": 0.474,
+      "spread_cents": 85.0,
+      "arb_us": {
+        "direction": "BUY_KALSHI_SELL_POLY",
+        "spread_cents": 85.0,
+        "net_profit_cents": 85.0,
+        "profit_pct": 566.66,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 15,
+        "p_price": 100.0
+      },
+      "arb_intl": {
+        "direction": "BUY_KALSHI_SELL_POLY",
+        "spread_cents": 85.0,
+        "net_profit_cents": 84.98,
+        "profit_pct": 566.53,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.02,
+        "k_price": 15,
+        "p_price": 100.0
+      },
+      "notes": "Shutdown duration and resolution markets.",
+      "kalshi_url": "https://kalshi.com/markets/kxgovshutlength-26feb28-4d"
+    },
+    {
+      "pair_name": "\ud83c\udfdb\ufe0f Government Shutdown",
+      "kalshi_ticker": "KXGOVSHUTLENGTH-26FEB28-5D",
+      "kalshi_title": "Will the federal government shut down for more than 5 days?",
+      "kalshi_yes": 8,
+      "kalshi_volume": 2817403,
+      "poly_title": "Will the government shutdown last 5 days or more?",
+      "poly_yes": 17.5,
+      "poly_volume": 2309426.042667,
+      "match_score": 0.474,
+      "spread_cents": 9.5,
+      "arb_us": {
+        "direction": "BUY_KALSHI_SELL_POLY",
+        "spread_cents": 9.5,
+        "net_profit_cents": 9.5,
+        "profit_pct": 118.74,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 8,
+        "p_price": 17.5
+      },
+      "arb_intl": {
+        "direction": "BUY_KALSHI_SELL_POLY",
+        "spread_cents": 9.5,
+        "net_profit_cents": 9.5,
+        "profit_pct": 118.7,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 8,
+        "p_price": 17.5
+      },
+      "notes": "Shutdown duration and resolution markets.",
+      "kalshi_url": "https://kalshi.com/markets/kxgovshutlength-26feb28-5d"
+    },
+    {
+      "pair_name": "\ud83c\udfdb\ufe0f Government Shutdown",
+      "kalshi_ticker": "KXGOVSHUTLENGTH-26FEB28-25D",
+      "kalshi_title": "Will the federal government shut down for more than 25 days?",
+      "kalshi_yes": 2,
+      "kalshi_volume": 872280,
+      "poly_title": "Will the government shutdown last 6 days or more?",
+      "poly_yes": 5.5,
+      "poly_volume": 606484.655795,
+      "match_score": 0.42,
+      "spread_cents": 3.5,
+      "arb_us": {
+        "direction": "BUY_KALSHI_SELL_POLY",
+        "spread_cents": 3.5,
+        "net_profit_cents": 3.5,
+        "profit_pct": 174.99,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 2,
+        "p_price": 5.5
+      },
+      "arb_intl": {
+        "direction": "BUY_KALSHI_SELL_POLY",
+        "spread_cents": 3.5,
+        "net_profit_cents": 3.5,
+        "profit_pct": 174.94,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 2,
+        "p_price": 5.5
+      },
+      "notes": "Shutdown duration and resolution markets.",
+      "kalshi_url": "https://kalshi.com/markets/kxgovshutlength-26feb28-25d"
+    },
+    {
+      "pair_name": "\ud83c\udfdb\ufe0f Government Shutdown",
+      "kalshi_ticker": "KXGOVSHUTLENGTH-26FEB28-15D",
+      "kalshi_title": "Will the federal government shut down for more than 15 days?",
+      "kalshi_yes": 2,
+      "kalshi_volume": 855511,
+      "poly_title": "Will the government shutdown last 6 days or more?",
+      "poly_yes": 5.5,
+      "poly_volume": 606484.655795,
+      "match_score": 0.42,
+      "spread_cents": 3.5,
+      "arb_us": {
+        "direction": "BUY_KALSHI_SELL_POLY",
+        "spread_cents": 3.5,
+        "net_profit_cents": 3.5,
+        "profit_pct": 174.99,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 2,
+        "p_price": 5.5
+      },
+      "arb_intl": {
+        "direction": "BUY_KALSHI_SELL_POLY",
+        "spread_cents": 3.5,
+        "net_profit_cents": 3.5,
+        "profit_pct": 174.94,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 2,
+        "p_price": 5.5
+      },
+      "notes": "Shutdown duration and resolution markets.",
+      "kalshi_url": "https://kalshi.com/markets/kxgovshutlength-26feb28-15d"
+    },
+    {
+      "pair_name": "\ud83c\udfdb\ufe0f Government Shutdown",
+      "kalshi_ticker": "KXGOVSHUTLENGTH-26FEB28-10D",
+      "kalshi_title": "Will the federal government shut down for more than 10 days?",
+      "kalshi_yes": 4,
+      "kalshi_volume": 1411653,
+      "poly_title": "Will the government shutdown last 10 days or more?",
+      "poly_yes": 1.8,
+      "poly_volume": 840089.743909,
+      "match_score": 0.477,
+      "spread_cents": 2.2,
+      "arb_us": {
+        "direction": "BUY_POLY_SELL_KALSHI",
+        "spread_cents": 2.2,
+        "net_profit_cents": 2.25,
+        "profit_pct": 128.56,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 4,
+        "p_price": 1.8
+      },
+      "arb_intl": {
+        "direction": "BUY_POLY_SELL_KALSHI",
+        "spread_cents": 2.2,
+        "net_profit_cents": 2.25,
+        "profit_pct": 128.54,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 4,
+        "p_price": 1.8
+      },
+      "notes": "Shutdown duration and resolution markets.",
+      "kalshi_url": "https://kalshi.com/markets/kxgovshutlength-26feb28-10d"
+    },
+    {
+      "pair_name": "\ud83c\udfdb\ufe0f Government Shutdown",
+      "kalshi_ticker": "KXGOVSHUTLENGTH-26FEB28-7D",
+      "kalshi_title": "Will the federal government shut down for more than 7 days?",
+      "kalshi_yes": 6,
+      "kalshi_volume": 2123659,
+      "poly_title": "Will the government shutdown last 7 days or more?",
+      "poly_yes": 4.4,
+      "poly_volume": 1752270.103681,
+      "match_score": 0.474,
+      "spread_cents": 1.6,
+      "arb_us": {
+        "direction": "BUY_POLY_SELL_KALSHI",
+        "spread_cents": 1.6,
+        "net_profit_cents": 1.6,
+        "profit_pct": 36.35,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 6,
+        "p_price": 4.4
+      },
+      "arb_intl": {
+        "direction": "BUY_POLY_SELL_KALSHI",
+        "spread_cents": 1.6,
+        "net_profit_cents": 1.6,
+        "profit_pct": 36.33,
+        "kalshi_fee": 0.0,
+        "poly_fee": 0.0,
+        "k_price": 6,
+        "p_price": 4.4
+      },
+      "notes": "Shutdown duration and resolution markets.",
+      "kalshi_url": "https://kalshi.com/markets/kxgovshutlength-26feb28-7d"
+    },
+    {
+      "pair_name": "\ud83c\udfdb\ufe0f Government Shutdown",
+      "kalshi_ticker": "KXGOVSHUTLENGTH-26FEB28-3D",
+      "kalshi_title": "Will the federal government shut down for more than 3 days?",
+      "kalshi_yes": 100,
+      "kalshi_volume": 3824964,
+      "poly_title": "Will the government shutdown last 3 days or more?",
+      "poly_yes": 100.0,
+      "poly_volume": 2986463.593437,
+      "match_score": 0.474,
+      "spread_cents": 0.0,
+      "arb_us": null,
+      "arb_intl": null,
+      "notes": "Shutdown duration and resolution markets.",
+      "kalshi_url": "https://kalshi.com/markets/kxgovshutlength-26feb28-3d"
+    }
+  ],
+  "auto_discovered": [],
+  "fee_structure": {
+    "kalshi": 0.007,
+    "polymarket_us": 0.0001,
+    "polymarket_intl": 0.02
+  }
+}

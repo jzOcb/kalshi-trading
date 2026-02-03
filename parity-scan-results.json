@@ -1,0 +1,13 @@
+{
+  "scan_time": "2026-02-03T23:07:03.568113+00:00",
+  "stats": {
+    "events_scanned": 2,
+    "markets_scanned": 23,
+    "single_parity_found": 0,
+    "bracket_parity_found": 0,
+    "events_skipped_low_volume": 0,
+    "scan_time": "2026-02-03T23:07:03.568113+00:00",
+    "total_opportunities": 0
+  },
+  "opportunities": []
+}

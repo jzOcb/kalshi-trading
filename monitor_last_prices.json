@@ -1,0 +1,23 @@
+{
+  "KXGDP-26JAN30-T2.5": {
+    "last_price": 86,
+    "yes_bid": 85,
+    "yes_ask": 86,
+    "timestamp": "2026-02-03T14:16:25.068573+00:00",
+    "status": "active"
+  },
+  "KXGDP-26JAN30-T5": {
+    "last_price": 11,
+    "yes_bid": 11,
+    "yes_ask": 12,
+    "timestamp": "2026-02-03T14:16:25.068573+00:00",
+    "status": "active"
+  },
+  "KXCPI-26JAN-T0.0": {
+    "last_price": 94,
+    "yes_bid": 92,
+    "yes_ask": 93,
+    "timestamp": "2026-02-03T14:16:25.068573+00:00",
+    "status": "active"
+  }
+}

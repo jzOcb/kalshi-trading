@@ -1,0 +1,50 @@
+{
+  "trades": [
+    {
+      "ticker": "KXCPI-26JAN-T0.0",
+      "side": "YES",
+      "entry_cents": 95,
+      "settles": "2025-02-11",
+      "description": "Jan CPI MoM >= 0.0%"
+    },
+    {
+      "ticker": "KXCPI-26JAN-T-0.1",
+      "side": "YES",
+      "entry_cents": 96,
+      "settles": "2025-02-11",
+      "description": "Jan CPI MoM >= -0.1%"
+    },
+    {
+      "ticker": "KXGDP-26JAN30-T5",
+      "side": "NO",
+      "entry_cents": 88,
+      "settles": "2025-02-20",
+      "description": "Q4 GDP Advance >= 5.0%"
+    },
+    {
+      "ticker": "KXGDP-26JAN30-T2.5",
+      "side": "YES",
+      "entry_cents": 89,
+      "settles": "2025-02-20",
+      "description": "Q4 GDP Advance >= 2.5%"
+    },
+    {
+      "ticker": "KXGDP-26JAN30-T5.5",
+      "side": "NO",
+      "entry_cents": 93,
+      "settles": "2025-02-20",
+      "description": "Q4 GDP Advance >= 5.5%"
+    },
+    {
+      "ticker": "KXGDP-26JAN30-T2.0",
+      "side": "YES",
+      "entry_cents": 94,
+      "settles": "2025-02-20",
+      "description": "Q4 GDP Advance >= 2.0%"
+    }
+  ],
+  "meta": {
+    "created": "2025-02-08",
+    "note": "Paper trades only - no real money"
+  }
+}

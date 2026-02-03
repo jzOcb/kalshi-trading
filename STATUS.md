@@ -1,7 +1,12 @@
 # STATUS.md — Kalshi Trading System
-Last updated: 2026-02-02T16:55Z
+Last updated: 2026-02-03T06:18Z
 
-## 当前状态: 进行中 — WebSocket基础设施已实现 ✅
+## 版本历史
+- **v1**: 基础市场扫描 + notify（scanner.py, notify.py）
+- **v2**: Decision Engine评分系统 + 增强报告（decision.py, report_v2.py）— 当前主力
+- **v3**: 🔧开发中 — 多策略扩展（parity/endgame/cross-platform，基于BTC RESEARCH-V2发现）
+
+## 当前状态: 进行中 — v3多策略开发中 🔧
 
 ## 最后做了什么:
 - ✅ **实现了Kalshi WebSocket基础设施**（2026-02-02 16:55Z）

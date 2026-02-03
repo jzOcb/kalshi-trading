@@ -1,0 +1,7 @@
+{
+  "positions": [
+    {"ticker": "KXGDP-26JAN30-T2.5", "side": "YES", "entry_price": 85, "contracts": 33, "cost": 28.05, "payout": 33, "settles": "2026-02-20"},
+    {"ticker": "KXGDP-26JAN30-T5", "side": "NO", "entry_price": 89, "contracts": 22, "cost": 19.58, "payout": 22, "settles": "2026-02-20"},
+    {"ticker": "KXCPI-26JAN-T0.0", "side": "YES", "entry_price": 94, "contracts": 37, "cost": 34.93, "payout": 37, "settles": "2026-02-11"}
+  ]
+}

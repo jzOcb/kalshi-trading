@@ -3,8 +3,15 @@
 
 cd /home/clawdbot/clawd
 
-# 运行扫描
-REPORT=$(python3 kalshi/notify.py 2>&1)
+# 运行扫描 (report_v2: 全量扫描551+市场，详细评分+链接)
+REPORT=$(cd kalshi && timeout 180 python3 -c "
+import sys, io
+sys.stdout = io.StringIO()
+from report_v2 import scan_and_decide
+result = scan_and_decide()
+sys.stdout = sys.__stdout__
+print(result)
+" 2>/dev/null)
 
 # 更新heartbeat state
 python3 -c "
