@@ -1,7 +1,7 @@
 #!/bin/bash
 # Kalshi每小时扫描并发送到Jason的DM
 
-cd /home/clawdbot/clawd
+cd /Users/openclaw/clawd
 
 # 运行扫描 (report_v2: 全量扫描551+市场，详细评分+链接)
 REPORT=$(cd kalshi && timeout 180 python3 -c "

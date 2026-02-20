@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import warnings; warnings.filterwarnings("ignore", message="urllib3 v2")
 """Kalshi Position Monitor — 实时监控持仓盈亏"""
 
 import json

@@ -12,7 +12,7 @@ FAILED=0
 
 # Test 1: Hourly scan produces output
 echo "Test 1: Hourly scan output..."
-bash /home/clawdbot/clawd/kalshi/send_hourly_scan.sh > /dev/null 2>&1
+bash /Users/openclaw/clawd/kalshi/send_hourly_scan.sh > /dev/null 2>&1
 if [ -f /tmp/kalshi_hourly_scan_dm.txt ]; then
     LINES=$(wc -l < /tmp/kalshi_hourly_scan_dm.txt)
     if [ "$LINES" -gt 20 ]; then
@@ -51,7 +51,7 @@ fi
 
 # Test 3: Dynamic trader works
 echo "Test 3: Dynamic trader..."
-cd /home/clawdbot/clawd/kalshi
+cd /Users/openclaw/clawd/kalshi
 OUTPUT=$(python3 dynamic_trader.py monitor 2>&1)
 if echo "$OUTPUT" | grep -q "MONITORING"; then
     echo "  ✅ Monitor runs"
@@ -62,8 +62,8 @@ fi
 
 # Test 4: Paper trade system
 echo "Test 4: Paper trade system..."
-if [ -f /home/clawdbot/clawd/kalshi/trades.json ]; then
-    if python3 -c "import json; json.load(open('/home/clawdbot/clawd/kalshi/trades.json'))" 2>/dev/null; then
+if [ -f /Users/openclaw/clawd/kalshi/trades.json ]; then
+    if python3 -c "import json; json.load(open('/Users/openclaw/clawd/kalshi/trades.json'))" 2>/dev/null; then
         echo "  ✅ Trades file valid"
     else
         echo "  ❌ Trades file corrupted"

@@ -18,7 +18,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-sys.path.insert(0, '/home/clawdbot/clawd/kalshi')
+sys.path.insert(0, '/Users/openclaw/clawd/kalshi')
 
 from websocket.client import KalshiWebSocketClient
 
@@ -177,7 +177,7 @@ async def main():
             print(f"  [{i}] {json.dumps(msg)[:200]}")
     
     # Save results
-    output_path = "/home/clawdbot/clawd/kalshi/WS-TEST-RESULTS.md"
+    output_path = "/Users/openclaw/clawd/kalshi/WS-TEST-RESULTS.md"
     with open(output_path, 'w') as f:
         f.write(f"# WebSocket Test Results\n\n")
         f.write(f"**Date:** {datetime.utcnow().isoformat()}Z\n\n")

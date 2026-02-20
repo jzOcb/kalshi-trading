@@ -7,7 +7,7 @@ echo "🚀 Kalshi Trading Skill 发布流程"
 echo "================================"
 
 REPO_DIR="$HOME/kalshi-trading-repo"
-SOURCE_DIR="/home/clawdbot/clawd/kalshi"
+SOURCE_DIR="/Users/openclaw/clawd/kalshi"
 
 # 1. 复制文件到仓库目录
 echo ""
