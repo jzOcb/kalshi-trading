@@ -1,9 +1,20 @@
 #!/usr/bin/env python3
+"""
+portfolio_analysis - Kalshi 组合分析
+
+功能：
+    - 仓位大小评估
+    - 风险分析
+    - Kelly Criterion 计算
+    - 操作建议
+
+用法：
+    python portfolio_analysis.py         # 生成分析报告
+    
+依赖：
+    - get_positions.py
+"""
 import warnings; warnings.filterwarnings("ignore", message="urllib3 v2")
-"""
-Kalshi Portfolio Analysis — sizing, risk, Kelly, recommendations
-Runs as part of hourly report. Reads live positions from API.
-"""
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-Smart Kalshi Reporter - Full reports 2x/day, delta reports other times.
+smart_reporter - 智能 Kalshi 报告
 
-Logic:
-1. Full report hours (9 AM, 6 PM ET): Always send full report
-2. Other hours: Only send if there are meaningful changes
-3. Changes = new market SERIES (not just threshold variations) or price moves ≥5¢
+功能：
+    - 全量报告 2x/天
+    - 增量报告按需
+    - 智能跳过无变化
 
-Output modes:
-- "FULL" = send complete report
-- "DELTA: <changes>" = send only changes
-- "SKIP" = nothing to send
+用法：
+    python smart_reporter.py               # 生成智能报告
+    python smart_reporter.py --full        # 强制全量
+    
+依赖：
+    - report_v2.py
 """
 
 import json

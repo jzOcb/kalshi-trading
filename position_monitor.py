@@ -1,6 +1,20 @@
 #!/usr/bin/env python3
+"""
+position_monitor - Kalshi 仓位监控
+
+功能：
+    - 实时监控持仓盈亏
+    - 价格变动告警
+    - 生成持仓报告
+
+用法：
+    python position_monitor.py           # 运行监控
+    python position_monitor.py --once    # 单次检查
+    
+依赖：
+    - get_positions.py
+"""
 import warnings; warnings.filterwarnings("ignore", message="urllib3 v2")
-"""Kalshi Position Monitor — 实时监控持仓盈亏"""
 
 import json
 import os

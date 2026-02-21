@@ -1,13 +1,17 @@
 #!/usr/bin/env python3
 """
-Kalshi Paper Trading Settlement Checker
+settlement_checker - Kalshi 结算检查
 
-Reads paper_trades.json, checks Kalshi API for settlement results,
-calculates P&L, and writes a report.
+功能：
+    - Paper trading 结算验证
+    - 预测 vs 实际对比
+    - 生成结算报告
 
-Usage:
-    python3 kalshi/settlement_checker.py [--force]
-    --force: check even if no trades are due today
+用法：
+    python settlement_checker.py           # 检查结算
+    
+依赖：
+    - get_positions.py
 """
 
 import json

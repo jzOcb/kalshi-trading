@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """
-Kalshi 市场普查工具
+market_census - Kalshi 市场普查工具
 
-全面扫描所有市场，分类并生成 watchlist。
-每周/双周运行一次更新。
+功能：
+    - 扫描所有 Kalshi 市场
+    - 按 series 分类
+    - 生成 watchlist_series.json
+    - 识别 Tier 1/2 市场
 
-用法:
-    python3 market_census.py              # 完整扫描
-    python3 market_census.py --summary    # 只看摘要
-    python3 market_census.py --update     # 更新现有 watchlist
-
-Author: OpenClaw
-Date: 2026-02-21
+用法：
+    python market_census.py                      # 运行普查
+    python market_census.py --output watchlist.json
+    
+依赖：
+    - requests
 """
 
 import os

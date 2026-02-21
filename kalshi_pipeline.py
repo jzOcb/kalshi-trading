@@ -1,19 +1,27 @@
 #!/usr/bin/env python3
 """
-Kalshi 完整分析流水线
+kalshi_pipeline - Kalshi 完整分析流水线
 
-流程:
-1. market_census.py → watchlist_series.json (每周)
-2. 本脚本: 快速筛选 → 深度研究 → 格式化报告
+功能：
+    - 从 watchlist 获取市场
+    - 快速筛选候选
+    - 深度研究 (MarketResearcherV2)
+    - Nowcast 数据获取
+    - 置信度计算
+    - 仓位建议
+    - 格式化报告
 
-用法:
-    python kalshi_pipeline.py              # 完整流水线
-    python kalshi_pipeline.py --top 5      # 只分析前5个
-    python kalshi_pipeline.py --dry-run    # 只筛选不研究
-    python kalshi_pipeline.py --notify     # 发送 Telegram 通知
-
-Author: OpenClaw
-Date: 2026-02-21
+用法：
+    python kalshi_pipeline.py                    # 运行完整流水线
+    python kalshi_pipeline.py --dry-run          # 只列出候选
+    python kalshi_pipeline.py --top 5            # 只分析前 5 个
+    python kalshi_pipeline.py --notify           # 发送 Telegram 通知
+    
+依赖：
+    - market_researcher_v2.py
+    - nowcast_fetcher.py
+    - source_detector.py
+    - position_calculator.py
 """
 
 import os

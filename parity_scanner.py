@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
 """
-Kalshi Parity Arbitrage Scanner
+parity_scanner - Kalshi 套利扫描
 
-Scans ALL open Kalshi markets grouped by event. For each event with multiple
-brackets, checks if buying complementary positions costs < $0.993 total
-(accounting for ~0.7% Kalshi fee).
+功能：
+    - 扫描价格偏差
+    - 识别套利机会
+    - 计算无风险收益
 
-Based on: RESEARCH-V2.md Strategy 1 (Orderbook Parity Arbitrage)
-- gabagool22: $313 → $414K in one month using this approach
-- Risk-free when both legs fill (guaranteed $1.00 at settlement)
-
-Uses existing validated functions from report_v2.py (per __init__.py registry).
-
-Usage:
-    python3 kalshi/parity_scanner.py              # Full scan
-    python3 kalshi/parity_scanner.py --threshold 0.99  # Custom threshold
-    python3 kalshi/parity_scanner.py --series KXGDP    # Single series
-    python3 kalshi/parity_scanner.py --fast       # Skip events <$1K volume (faster)
+用法：
+    python parity_scanner.py               # 扫描套利机会
+    
+依赖：
+    - requests
 """
 
 import json

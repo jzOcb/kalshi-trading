@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """
-Backtest Market Researcher
+backtest_researcher - 策略回测
 
-用历史已结算市场验证研究框架的准确性。
+功能：
+    - 历史数据回测
+    - 策略效果评估
+    - 生成回测报告
 
-核心问题: 如果我们用当时可获得的数据做判断，能预测对多少？
-
-Author: OpenClaw
-Date: 2026-02-20
+用法：
+    python backtest_researcher.py          # 运行回测
+    python backtest_researcher.py --days 30
+    
+依赖：
+    - market_researcher_v2.py
 """
 
 import os

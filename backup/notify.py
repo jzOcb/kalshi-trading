@@ -1,7 +1,20 @@
 """
-Kalshi Scanner → Telegram-friendly report
-铁律：每个推荐必须查证底层事实！
-Uses report_v2's scoring/verification for junk bond candidates.
+notify - Telegram 格式化通知
+
+功能：
+    - 格式化市场报告为 Telegram 消息
+    - 支持 emoji 和格式化
+    - 发送到指定 chat
+    - 铁律：每个推荐必须查证底层事实
+
+用法：
+    from notify import send_telegram
+    send_telegram("消息内容")
+    
+依赖：
+    - TELEGRAM_BOT_TOKEN 环境变量
+    - TELEGRAM_CHAT_ID 环境变量
+    - report_v2.py
 """
 
 import requests

@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
 """
-Cross-Platform Price Comparison Monitor: Kalshi vs Polymarket
+cross_platform_monitor - Kalshi vs Polymarket 比价
 
-Enhanced version of crossplatform.py and poly_tracker.py.
-Compares prices for events that exist on BOTH platforms,
-calculates arbitrage profit after fees.
+功能：
+    - 跨平台价格比较
+    - 识别平台间套利
+    - 监控价差变化
 
-Based on: RESEARCH-V2.md Strategy 6 (Cross-Platform Arbitrage)
-- CarlosIbCu/polymarket-kalshi-btc-arbitrage-bot as reference
-- Real price discrepancies documented across platforms
-
-Uses existing validated functions and fuzzy matching from crossplatform.py.
-
-Usage:
-    python3 kalshi/cross_platform_monitor.py              # Full comparison
-    python3 kalshi/cross_platform_monitor.py --auto        # + auto-discovery
-    python3 kalshi/cross_platform_monitor.py --json        # JSON output only
+用法：
+    python cross_platform_monitor.py       # 运行比价监控
+    
+依赖：
+    - requests
 """
 
 import json

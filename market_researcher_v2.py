@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 """
-Market Researcher V2 - 基于 Kalshi 官方结算源的事实核查框架
+market_researcher_v2 - 基于官方结算源的深度研究
 
-核心改进:
-1. 从市场规则提取官方结算数据源
-2. LLM 动态识别需要查询的额外数据源
-3. 优先使用官方源，次要使用辅助源
+功能：
+    - 事实核查框架
+    - 官方数据源验证
+    - 置信度评估
+    - 结构化研究报告
 
-Author: OpenClaw
-Date: 2026-02-20
+用法：
+    from market_researcher_v2 import MarketResearcherV2
+    researcher = MarketResearcherV2()
+    result = researcher.research(market_dict)
+    
+依赖：
+    - source_detector.py
 """
 
 import os

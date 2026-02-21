@@ -1,4 +1,20 @@
-import warnings; warnings.filterwarnings("ignore", message="urllib3 v2")
+#!/usr/bin/env python3
+"""
+report_v2 - Kalshi 快速扫描报告
+
+功能：
+    - 扫描 watchlist 中的市场
+    - 筛选高价值机会
+    - 生成简洁报告
+
+用法：
+    python report_v2.py              # 生成报告
+    python report_v2.py --json       # JSON 输出
+    
+依赖：
+    - watchlist_series.json
+    - requests
+"""
 """
 Kalshi Enhanced Report with Decision Engine
 Scans markets → Analyzes rules → Makes BUY/WAIT/SKIP recommendations

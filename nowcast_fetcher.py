@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
 """
-Nowcast Fetcher - Fetches real-time economic nowcasts from official sources.
+nowcast_fetcher - 实时经济数据获取
 
-Data Sources:
-- GDPNow: Atlanta Fed RSS feed (https://www.atlantafed.org/rss/GDPNow)
-- CPI Nowcast: Cleveland Fed JSON API (https://www.clevelandfed.org/-/media/files/webcharts/inflationnowcasting/nowcast_month.json)
-- Cleveland Fed Quarterly: https://www.clevelandfed.org/-/media/files/webcharts/inflationnowcasting/nowcast_quarter.json
+功能：
+    - GDPNow: Atlanta Fed RSS
+    - CPI: Cleveland Fed JSON API
+    - 统一接口 get_for_market()
+
+用法：
+    from nowcast_fetcher import NowcastFetcher
+    fetcher = NowcastFetcher()
+    result = fetcher.get_for_market("KXGDP", 2.5)
+    
+依赖：
+    - urllib.request
 """
 
 import json

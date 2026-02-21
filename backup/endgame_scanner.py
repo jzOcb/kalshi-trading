@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 """
-Kalshi Endgame Strategy Scanner
+endgame_scanner - Kalshi 临期策略扫描
 
-Finds markets settling within 1-7 days where outcome is near-certain (>95%
-probability) but price hasn't fully caught up. These are low-risk, high
-annualized return opportunities.
+功能：
+    - 扫描即将到期的市场
+    - 识别临期套利机会
+    - 计算时间价值
 
-Based on: RESEARCH-V2.md Strategy 4 (High-Probability Auto-Compounding)
-- Chinese community: "尾盘扫单也是鲸鱼和机器人的常用策略"
-- PolyTrack guide: "buying near-certain outcomes (95-99% probability)"
-
-Uses existing validated functions from report_v2.py (per __init__.py registry).
-
-Usage:
-    python3 kalshi/endgame_scanner.py                # Full scan (1-7 days)
-    python3 kalshi/endgame_scanner.py --max-days 3   # Only 1-3 days
-    python3 kalshi/endgame_scanner.py --min-prob 90  # Lower probability threshold
+用法：
+    python endgame_scanner.py              # 扫描临期机会
+    python endgame_scanner.py --days 3     # 3天内到期
+    
+依赖：
+    - requests
 """
 
 import json

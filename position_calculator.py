@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 """
-动态仓位计算器
+position_calculator - 动态仓位计算器
 
-根据置信度、账户余额、风险偏好计算建议仓位
+功能：
+    - Kelly Criterion 动态仓位
+    - 账户余额和敞口考量
+    - 置信度乘数 (HIGH/MEDIUM/LOW)
 
-用法:
+用法：
     from position_calculator import PositionCalculator
     calc = PositionCalculator()
-    position = calc.calculate("HIGH", 85)  # 置信度, 价格
-
-Author: OpenClaw
-Date: 2026-02-21
+    result = calc.calculate(price=0.92, confidence="HIGH")
+    
+依赖：
+    - get_positions.py (获取账户信息)
 """
 
 import os

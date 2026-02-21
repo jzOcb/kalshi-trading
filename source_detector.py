@@ -1,9 +1,18 @@
 #!/usr/bin/env python3
 """
-官方数据源检测模块
+source_detector - 官方数据源检测
 
-从 rules_primary 动态识别可研究性，无需白名单维护。
-Scanner 和 Researcher 都调用这个。
+功能：
+    - 检测市场使用的官方数据源
+    - 支持 30+ 正则模式
+    - 返回数据源列表和 Tier 级别
+
+用法：
+    from source_detector import detect_sources
+    sources, tier = detect_sources(market_dict)
+    
+依赖：
+    - re
 """
 
 import re

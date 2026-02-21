@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
+"""
+sync_positions - 同步 Kalshi 账户仓位
+
+功能：
+    - 从多个 Kalshi 账户获取仓位
+    - 更新 positions.json 供报告系统使用
+    - 支持主账户和天气账户
+
+用法：
+    python sync_positions.py
+    
+依赖：
+    - kalshi.client.KalshiClient
+"""
 import warnings; warnings.filterwarnings("ignore", message="urllib3 v2")
-"""
-Sync Positions from Both Kalshi Accounts
-=========================================
-
-Fetches positions from both main and weather accounts
-and updates positions.json for the report system.
-
-Usage:
-    python3 sync_positions.py
-"""
 
 import json
 import os

@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
-import warnings; warnings.filterwarnings("ignore", message="urllib3 v2")
 """
-Fetch current Kalshi positions via authenticated API.
-Returns position tickers and details as JSON.
-Can be imported or run standalone.
+get_positions - 获取 Kalshi 当前仓位
 
-Uses vault/loader.py for credentials — DO NOT HARDCODE KEYS
+功能：
+    - 通过认证 API 获取当前持仓
+    - 返回 JSON 格式的仓位详情
+    - 可作为模块导入或独立运行
+
+用法：
+    python get_positions.py              # 打印仓位 JSON
+    python get_positions.py --summary    # 打印摘要
+    
+依赖：
+    - cryptography (签名)
+    - KALSHI_API_KEY 和 KALSHI_PRIVATE_KEY_PATH 环境变量
 """
+import warnings; warnings.filterwarnings("ignore", message="urllib3 v2")
 import os, sys, json, time, base64
 from urllib import request as urlrequest
 from cryptography.hazmat.primitives import hashes, serialization
