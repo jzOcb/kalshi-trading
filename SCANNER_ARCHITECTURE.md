@@ -9,7 +9,7 @@ Kalshi API 特性：
 
 ## 两层扫描策略
 
-### Layer 1: 已知 Series 快速扫描 (每日)
+### Layer 1: 已知 Series 快速扫描 (每日, ≤60天)
 
 ```
 KNOWN_SERIES = [

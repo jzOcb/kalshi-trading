@@ -99,7 +99,7 @@ def scan_series(series_info: dict, max_days: int = 90) -> list:
         return []
 
 
-def quick_scan(max_days: int = 90, min_volume: int = 0) -> dict:
+def quick_scan(max_days: int = 60, min_volume: int = 0) -> dict:
     """执行快速扫描"""
     known = load_known_series()
     now = datetime.now(timezone.utc)
@@ -162,7 +162,7 @@ def print_report(report: dict):
 
 def main():
     parser = argparse.ArgumentParser(description="Kalshi Quick Scanner")
-    parser.add_argument("--days", type=int, default=90, help="最大到期天数")
+    parser.add_argument("--days", type=int, default=60, help="最大到期天数")
     parser.add_argument("--min-volume", type=int, default=0, help="最小 volume")
     parser.add_argument("--json", action="store_true", help="JSON 输出")
     parser.add_argument("--save", action="store_true", help="保存结果")
