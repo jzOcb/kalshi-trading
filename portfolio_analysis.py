@@ -1,54 +1,95 @@
 #!/usr/bin/env python3
 """
-portfolio_analysis - Kalshi 组合分析
+portfolio_analysis - Kalshi 持仓综合分析
 
 功能：
-    - 仓位大小评估
-    - 风险分析
-    - Kelly Criterion 计算
-    - 操作建议
+    - 持仓健康度（胜率、EV、Kelly）
+    - 实时 P&L（入场价 vs 现价）
+    - 结算倒计时
+    - 仓位占比
 
 用法：
-    python portfolio_analysis.py         # 生成分析报告
+    python portfolio_analysis.py         # 生成综合报告
+    from portfolio_analysis import main  # 被 pipeline 调用
     
 依赖：
-    - get_positions.py
+    - kalshi.client.KalshiClient
 """
 import warnings; warnings.filterwarnings("ignore", message="urllib3 v2")
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import math
+from datetime import datetime, timezone
 
-from get_positions import get_positions, get_balance
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../btc-arbitrage/src"))
+from kalshi.client import KalshiClient
+
+# 账户配置
+ACCOUNTS = [
+    ("main", "主账号"),
+    ("weather", "副账号"),
+]
+
+
+def get_all_positions():
+    """获取所有账户的持仓和市场数据"""
+    all_positions = []
+    total_cash = 0
+    total_portfolio = 0
+    market_cache = {}  # 缓存市场数据避免重复请求
+    
+    for account_id, account_label in ACCOUNTS:
+        try:
+            client = KalshiClient(account=account_id)
+            
+            # 获取余额
+            balance = client.get_balance()
+            total_cash += balance.get('balance', 0)
+            total_portfolio += balance.get('portfolio_value', 0)
+            
+            # 获取持仓
+            result = client.get_positions()
+            positions = result.get("market_positions", [])
+            
+            for p in positions:
+                if p.get('position', 0) != 0:
+                    p['_account'] = account_label
+                    
+                    # 获取市场数据 (带缓存)
+                    ticker = p.get('ticker', '')
+                    if ticker and ticker not in market_cache:
+                        try:
+                            market_data = client.get_market(ticker)
+                            market_cache[ticker] = market_data.get('market', {})
+                        except:
+                            market_cache[ticker] = {}
+                    
+                    p['_market'] = market_cache.get(ticker, {})
+                    all_positions.append(p)
+        except Exception as e:
+            print(f"  ⚠️ {account_label}: {e}", file=sys.stderr)
+    
+    return all_positions, total_cash / 100, total_portfolio / 100
 
 
 def estimate_win_prob(ticker, yes_bid):
-    """Estimate win probability based on market type and fundamentals.
-    
-    ⚠️ GDP LESSON (2026-02-20): GDPNow predicted 4.2%, actual was 1.4%
-    Error was 2.8pp! Use WIDE confidence intervals (σ=1.5, not 0.8)
-    """
-    # GDPNow is a ROUGH ESTIMATE, not truth
-    # Q4 2025: GDPNow said 4.2%, actual was 1.4% (2.8pp error!)
-    # Use conservative σ=1.5 to account for policy shocks (shutdown, tariffs)
-    GDP_NOW = 2.0  # More conservative baseline (don't trust nowcast)
-    GDP_SIGMA = 1.5  # Wide uncertainty (was 0.8, too narrow!)
+    """Estimate win probability based on market type."""
+    GDP_NOW = 2.0
+    GDP_SIGMA = 1.5
     
     if "GDP" in ticker:
         threshold = float(ticker.split("-T")[-1])
-        # Use WIDE normal distribution to reflect model uncertainty
-        import math
         z = (GDP_NOW - threshold) / GDP_SIGMA
         prob = 0.5 * (1 + math.erf(z / math.sqrt(2)))
-        # Cap probability - never assume >90% certainty for Nowcast-based markets
-        return min(max(prob, 0.05), 0.90)  # Was 0.02-0.99, now 0.05-0.90
+        return min(max(prob, 0.05), 0.90)
     
     elif "CPI" in ticker:
         threshold = float(ticker.split("-T")[-1])
         if threshold <= 0.0:
-            return 0.99  # CPI almost always positive
+            return 0.99
         elif threshold >= 0.5:
-            return 0.15  # High CPI unlikely
+            return 0.15
         elif threshold >= 0.4:
             return 0.30
         elif threshold >= 0.3:
@@ -56,12 +97,11 @@ def estimate_win_prob(ticker, yes_bid):
         else:
             return 0.80
     
-    # Default: use market price as probability
     return yes_bid if yes_bid else 0.5
 
 
 def kelly_fraction(prob, odds):
-    """Kelly criterion: f* = (p*b - q) / b where b = odds, q = 1-p"""
+    """Kelly criterion: f* = (p*b - q) / b"""
     if odds <= 0:
         return 0
     q = 1 - prob
@@ -69,122 +109,132 @@ def kelly_fraction(prob, odds):
     return max(0, f)
 
 
-def get_short_name(ticker):
-    if "GDP" in ticker:
+def days_until(date_str):
+    """Calculate days until settlement."""
+    try:
+        if 'T' in date_str:
+            settle_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+        else:
+            settle_date = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        delta = (settle_date - now).days
+        return max(0, delta)
+    except:
+        return -1
+
+
+def format_settlement(days):
+    """Format settlement countdown."""
+    if days == 0:
+        return "今天"
+    elif days == 1:
+        return "明天"
+    elif days < 0:
+        return "已结算"
+    else:
+        return f"{days}天后"
+
+
+def get_short_name(ticker, title=""):
+    """Get short display name."""
+    if "HIGHNY" in ticker:
+        return "NYC高温"
+    elif "HIGHAUS" in ticker:
+        return "Austin高温"
+    elif "GDP" in ticker:
         return f"GDP >{ticker.split('-T')[-1]}%"
     elif "CPI" in ticker:
         return f"CPI >{ticker.split('-T')[-1]}%"
-    return ticker
+    return ticker[:15]
 
 
 def main():
+    """Generate unified position report."""
     try:
-        balance = get_balance()
-        cash = balance.get('balance', 0) / 100
-        portfolio_val = balance.get('portfolio_value', 0) / 100
+        active_positions, cash, portfolio_val = get_all_positions()
         total_val = cash + portfolio_val
     except Exception as e:
         print(f"⚠️ API error: {e}")
         return
 
-    try:
-        positions = get_positions()
-    except Exception as e:
-        print(f"⚠️ Position fetch error: {e}")
+    if not active_positions:
+        print("📐 持仓分析")
+        print(f"  (无持仓) | 现金: ${cash:.2f}")
         return
 
-    if not positions:
-        return
-
-    lines = []
-    lines.append("📐 持仓分析")
+    print("📐 持仓分析")
     
-    total_exposure = 0
-    total_expected_profit = 0
-    issues = []
+    total_cost = 0
+    total_value = 0
     
-    for p in positions:
-        ticker = p['ticker']
-        name = get_short_name(ticker)
-        pos_count = p.get('position', 0)
-        exposure = float(p.get('exposure_dollars', '0'))
-        yes_bid = p.get('yes_bid', 0)
-        yes_ask = p.get('yes_ask', 0)
+    for p in active_positions:
+        ticker = p.get('ticker', '')
+        market = p.get('_market', {})
+        title = market.get('title', '')
+        position_count = p.get('position', 0)  # negative = NO, positive = YES
+        total_traded_cents = p.get('total_traded', 0)
         
-        total_exposure += exposure
+        # 确定方向
+        side = "NO" if position_count < 0 else "YES"
+        count = abs(position_count)
         
-        # Determine side and entry
-        if pos_count > 0:
-            side = "YES"
-            qty = pos_count
-            entry_price = exposure / qty if qty else 0
-            current_price = yes_bid
-            max_payout = qty  # $1 per contract
-        else:
-            side = "NO"
-            qty = abs(pos_count)
-            entry_price = exposure / qty if qty else 0
-            current_price = 1 - yes_ask if yes_ask else 0
-            max_payout = qty
-
-        max_profit = max_payout - exposure
+        # 价格数据 (API返回cents，除以100转换)
+        yes_bid = market.get('yes_bid', 50) / 100
+        yes_ask = market.get('yes_ask', 50) / 100
+        no_bid = 1 - yes_ask  # NO bid = 1 - YES ask
+        no_ask = 1 - yes_bid  # NO ask = 1 - YES bid
         
-        # Win probability
-        raw_prob = estimate_win_prob(ticker, yes_bid)
-        win_prob = raw_prob if side == "YES" else (1 - raw_prob)
+        current_price = no_bid if side == "NO" else yes_bid
         
-        # Expected value
-        ev = win_prob * max_profit - (1 - win_prob) * exposure
-        total_expected_profit += ev
+        # 入场价 (从 total_traded 反推)
+        cost = total_traded_cents / 100
+        entry_price = cost / count if count > 0 else current_price
         
-        # Kelly optimal sizing
-        if win_prob > 0 and max_profit > 0:
-            odds = max_profit / exposure  # net odds
-            kelly = kelly_fraction(win_prob, odds)
-            kelly_dollars = kelly * total_val * 0.25  # quarter-Kelly
-        else:
-            kelly = 0
-            kelly_dollars = 0
+        # 当前市值
+        value = current_price * count
+        pnl = value - cost
+        pnl_pct = (pnl / cost * 100) if cost > 0 else 0
         
-        # Concentration
-        pct = (exposure / total_val * 100) if total_val > 0 else 0
+        total_cost += cost
+        total_value += value
         
-        # Return
-        ret_pct = (max_profit / exposure * 100) if exposure > 0 else 0
+        # 仓位占比
+        position_pct = (value / total_val * 100) if total_val > 0 else 0
         
-        lines.append(f"  {name} {side}: {pct:.0f}%仓位 | 回报{ret_pct:.0f}% | 胜率{win_prob*100:.0f}% | EV ${ev:+.2f} | Kelly建议${kelly_dollars:.0f}")
+        # 策略指标
+        prob = estimate_win_prob(ticker, yes_bid)
+        if side == "NO":
+            prob = 1 - prob
         
-        # Flag issues
-        if pct > 40:
-            issues.append(f"⚠️ {name}占{pct:.0f}%，过于集中（建议<40%）")
-        if ret_pct < 10 and pct > 20:
-            issues.append(f"💡 {name}回报{ret_pct:.0f}%但占{pct:.0f}%仓位，性价比低")
+        potential_return = (1 - current_price) / current_price if current_price > 0 else 0
+        ev = prob * potential_return * value - (1 - prob) * value
+        kelly = kelly_fraction(prob, 1/current_price - 1) if current_price > 0 else 0
+        kelly_dollars = kelly * cash
         
-        # ====== GDP LESSON (2026-02-20) ======
-        # GDPNow predicted 4.2%, actual was 1.4% = $179 loss
-        is_nowcast_market = "GDP" in ticker or "CPI" in ticker
-        high_entry = entry_price >= 0.85 if entry_price else False
+        # 结算时间
+        close_time = market.get('close_time', '') or market.get('expiration_time', '')
+        days = days_until(close_time)
+        settle_str = format_settlement(days)
         
-        if is_nowcast_market and high_entry:
-            issues.append(f"🔴 {name}: Nowcast市场+高价入场=GDP教训！模型误差可达2-3pp")
-        elif is_nowcast_market:
-            issues.append(f"⚠️ {name}: 依赖Nowcast模型，实际数据可能大幅偏离")
-        elif high_entry and pct > 10:
-            issues.append(f"⚠️ {name}: 高价入场({entry_price*100:.0f}¢)，错了亏损大")
-
-    # Cash analysis
-    cash_pct = (cash / total_val * 100) if total_val > 0 else 0
-    if cash_pct < 5:
-        issues.append(f"⚠️ 现金仅${cash:.2f}（{cash_pct:.0f}%），无加仓余地")
-
-    lines.append(f"\n  总EV: ${total_expected_profit:+.2f} | 现金: ${cash:.2f} ({cash_pct:.0f}%)")
+        # 输出
+        price_change = int((current_price - entry_price) * 100)
+        change_emoji = "✅" if pnl > 0 else ("🔻" if pnl < 0 else "")
+        
+        short_name = get_short_name(ticker, title)
+        account_label = p.get('_account', '')
+        acct_tag = f" [{account_label}]" if account_label else ""
+        print(f"  {short_name} {side}{acct_tag} ({position_pct:.0f}%仓位)")
+        print(f"    💰 {entry_price*100:.0f}¢ → {current_price*100:.0f}¢ ({price_change:+d}¢) | P&L: ${pnl:+.2f} ({pnl_pct:+.1f}%) {change_emoji}")
+        print(f"    📊 胜率{prob*100:.0f}% | EV: ${ev:+.2f} | Kelly: ${kelly_dollars:.0f}")
+        print(f"    ⏰ 结算: {settle_str}")
+        print()
     
-    if issues:
-        lines.append("\n🔍 建议:")
-        for issue in issues:
-            lines.append(f"  {issue}")
-
-    print("\n".join(lines))
+    # 汇总
+    total_pnl = total_value - total_cost
+    total_pnl_pct = (total_pnl / total_cost * 100) if total_cost > 0 else 0
+    cash_pct = (cash / total_val * 100) if total_val > 0 else 100
+    
+    print(f"  💼 总计: 市值 ${total_value:.2f} | P&L: ${total_pnl:+.2f} ({total_pnl_pct:+.1f}%) | 现金: ${cash:.2f} ({cash_pct:.0f}%)")
 
 
 if __name__ == "__main__":
