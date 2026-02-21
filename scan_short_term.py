@@ -22,14 +22,96 @@ import os
 import sys
 import json
 import argparse
+import re
 import requests
-from datetime import datetime, timedelta
-from typing import List, Dict
+from datetime import datetime, timedelta, timezone
+from typing import List, Dict, Tuple, Optional
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from source_detector import detect_sources, get_tier_label
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Expired Window Detection (整合自 expired_window.py)
+# 找"时间窗口已过但价格未调整"的市场 — Putin 电话案例
+# ═══════════════════════════════════════════════════════════════════════════════
+
+MONTH_PATTERNS = {
+    'january': (1, 31), 'february': (2, 28), 'march': (3, 31),
+    'april': (4, 30), 'may': (5, 31), 'june': (6, 30),
+    'july': (7, 31), 'august': (8, 31), 'september': (9, 30),
+    'october': (10, 31), 'november': (11, 30), 'december': (12, 31),
+    'jan': (1, 31), 'feb': (2, 28), 'mar': (3, 31),
+    'apr': (4, 30), 'jun': (6, 30), 'jul': (7, 31),
+    'aug': (8, 31), 'sep': (9, 30), 'oct': (10, 31),
+    'nov': (11, 30), 'dec': (12, 31),
+}
+
+QUARTER_PATTERNS = {
+    'q1': (3, 31), 'q2': (6, 30), 'q3': (9, 30), 'q4': (12, 31),
+    'first quarter': (3, 31), 'second quarter': (6, 30),
+    'third quarter': (9, 30), 'fourth quarter': (12, 31),
+}
+
+BEFORE_PATTERN = re.compile(
+    r'before\s+(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})',
+    re.IGNORECASE
+)
+
+
+def detect_expired_window(title: str, subtitle: str = "") -> Tuple[Optional[datetime], Optional[str], int]:
+    """
+    检测市场标题中的时间窗口，返回 (deadline, window_type, days_past)
+    days_past > 0 表示窗口已过
+    """
+    text = f"{title} {subtitle}".lower()
+    now = datetime.now(timezone.utc)
+    year = now.year
+    
+    # Check "before DATE" pattern
+    match = BEFORE_PATTERN.search(text)
+    if match:
+        month_name = match.group(1).lower()
+        day = int(match.group(2))
+        month_num = MONTH_PATTERNS.get(month_name, (0, 0))[0]
+        if month_num:
+            try:
+                deadline = datetime(year, month_num, day, tzinfo=timezone.utc)
+                if (now - deadline).days > 180:
+                    deadline = datetime(year + 1, month_num, day, tzinfo=timezone.utc)
+                days_past = (now - deadline).days
+                return deadline, f"before {match.group(1)} {day}", days_past
+            except ValueError:
+                pass
+    
+    # Check "in MONTH" pattern
+    for month_name, (month_num, last_day) in MONTH_PATTERNS.items():
+        patterns = [f'in {month_name}', f'{month_name} 20', f'by {month_name}', f'during {month_name}']
+        for pat in patterns:
+            if pat in text:
+                try:
+                    deadline = datetime(year, month_num, last_day, tzinfo=timezone.utc)
+                    if (now - deadline).days > 180:
+                        deadline = datetime(year + 1, month_num, last_day, tzinfo=timezone.utc)
+                    days_past = (now - deadline).days
+                    return deadline, f"{month_name} window", days_past
+                except ValueError:
+                    pass
+    
+    # Check quarter patterns
+    for q_name, (month_num, last_day) in QUARTER_PATTERNS.items():
+        if q_name in text:
+            try:
+                deadline = datetime(year, month_num, last_day, tzinfo=timezone.utc)
+                if (now - deadline).days > 180:
+                    deadline = datetime(year + 1, month_num, last_day, tzinfo=timezone.utc)
+                days_past = (now - deadline).days
+                return deadline, f"{q_name} window", days_past
+            except ValueError:
+                pass
+    
+    return None, None, 0
 
 API_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 CACHE_DIR = Path(__file__).parent / "data"
@@ -158,9 +240,35 @@ def categorize_market(market: Dict, rules_cache: Dict = None) -> Dict:
     动态检测市场可研究性
     
     使用 source_detector 模块，无需白名单维护。
+    包含 expired_window 检测 (时间窗口已过但价格未调整)。
     """
     ticker = market.get("ticker", "")
     title = market.get("title", "")
+    subtitle = market.get("subtitle", "")
+    
+    # ═══════════════════════════════════════════════════════════
+    # Expired Window 检测 — Putin 电话案例
+    # ═══════════════════════════════════════════════════════════
+    deadline, window_type, days_past = detect_expired_window(title, subtitle)
+    if deadline:
+        market["expired_window"] = {
+            "deadline": deadline.isoformat(),
+            "window_type": window_type,
+            "days_past": days_past,
+            "is_expired": days_past > 0,
+            "is_expiring_soon": -3 <= days_past <= 0,
+        }
+        
+        # 如果窗口已过且价格极端 → 高优先级信号
+        yes_price = market.get("last_price", 50)
+        if days_past > 0 and yes_price and yes_price < 85:
+            market["expired_window"]["signal"] = f"⏰ Window expired {days_past}d ago, YES only {yes_price}¢"
+            market["expired_window"]["potential"] = "YES_UNDERPRICED"
+        elif days_past > 0 and yes_price and yes_price > 15:
+            market["expired_window"]["signal"] = f"⏰ Window expired {days_past}d ago, verify if event occurred"
+            market["expired_window"]["potential"] = "NEEDS_VERIFICATION"
+    else:
+        market["expired_window"] = None
     
     # 获取 rules_primary (带缓存)
     rules = market.get("rules_primary", "")
