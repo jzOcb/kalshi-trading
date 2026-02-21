@@ -433,9 +433,30 @@ def run_pipeline(top_n: int = 10, dry_run: bool = False, verbose: bool = False) 
     
     # Step 5: 生成报告
     print("\n" + "=" * 60)
-    print("📊 KALSHI 分析报告")
+    print("📊 KALSHI 每日报告")
     print(f"⏰ {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print("=" * 60)
+    
+    # 5a: 持仓分析
+    try:
+        from portfolio_analysis import main as portfolio_main
+        import io
+        import contextlib
+        
+        # 捕获 portfolio_analysis 输出
+        f = io.StringIO()
+        with contextlib.redirect_stdout(f):
+            portfolio_main()
+        portfolio_output = f.getvalue().strip()
+        
+        if portfolio_output:
+            print("\n" + portfolio_output)
+            print("\n" + "-" * 40)
+    except Exception as e:
+        print(f"\n⚠️ 持仓分析跳过: {e}")
+    
+    # 5b: 新机会
+    print("\n🎯 新机会")
     
     for r in results:
         market = r["market"]
