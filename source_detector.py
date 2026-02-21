@@ -42,6 +42,47 @@ OFFICIAL_SOURCE_PATTERNS: List[Tuple[str, str, int, str]] = [
     (r'ustr\.gov|trade representative', 'USTR', 3, 'USTR 贸易公告'),
     (r'state\.gov|department of state', 'State', 3, '国务院声明'),
     (r'dhs\.gov|homeland security', 'DHS', 3, 'DHS 公告'),
+    
+    # Tier 3: 新闻可研究的政治事件 (有明确结算条件 + 可追踪新闻)
+    # 提名/任命
+    (r'nominat|appoint.*(chair|secretary|justice|director|ambassador)', 'Nomination', 3, '官方提名 + 新闻追踪'),
+    (r'fed\s*chair|federal reserve chair', 'FedChair', 3, '白宫提名 + 参议院确认'),
+    (r'supreme court|scotus', 'SCOTUS', 3, '法院公告 + 新闻'),
+    (r'cabinet\s*(member|secretary|position)', 'Cabinet', 3, '白宫提名 + 参议院确认'),
+    
+    # 外交/领土
+    (r'greenland|territory|annex|acqui(re|sition)', 'ForeignPolicy', 3, '外交新闻 + 官方声明'),
+    (r'tariff.*\d+%|import\s*dut', 'Tariff', 3, 'USTR 公告 + 贸易新闻'),
+    (r'sanction|embargo', 'Sanctions', 3, 'Treasury OFAC + 新闻'),
+    (r'treaty|agreement.*(sign|ratif)', 'Treaty', 3, '国务院 + 新闻'),
+    
+    # 国会/弹劾
+    (r'impeach|article.*impeachment', 'Impeachment', 3, '国会投票记录 + 新闻'),
+    (r'vote.*pass|pass.*vote|floor vote', 'CongressVote', 3, '国会日程 + 投票追踪'),
+    (r'veto|override', 'Veto', 3, '白宫声明 + 国会记录'),
+    
+    # 领导人变动 (可追踪)
+    (r'resign|step down|leave office|out as (president|governor|ceo|leader)', 'LeaderChange', 3, '官方声明 + 新闻'),
+    (r'recall|special election', 'Recall', 3, '选举委员会 + 新闻'),
+    (r'(khamenei|xi jinping|putin|kim jong|erdogan|modi|netanyahu).*(out|leave|die|replace|succeed)', 'ForeignLeader', 3, '国际新闻 + 情报分析'),
+    (r'(supreme leader|prime minister|president of).*(iran|china|russia|north korea)', 'ForeignLeader', 3, '国际新闻 + 情报分析'),
+    (r'successor.*(xi|putin|khamenei|kim)', 'ForeignLeader', 3, '国际新闻 + 情报分析'),
+    (r'(xi|putin|khamenei|kim).*successor', 'ForeignLeader', 3, '国际新闻 + 情报分析'),
+    
+    # 选举 (有明确结果)
+    (r'primary|caucus|runoff', 'Primary', 3, '选举结果 + 民调追踪'),
+    (r'midterm|general election.*\d{4}', 'Election', 3, '选举结果 + 民调'),
+    (r'electoral vote|winner.*state', 'ElectionResult', 3, '选举结果'),
+]
+
+# Tier 9 排除模式 (纯猜测，无法有效研究)
+SPECULATION_PATTERNS = [
+    r'first\s*(trillionaire|quadrillionaire)',  # 财富猜测
+    r'(203\d|204\d).*become.*president',  # 远期总统预测 (2030+)
+    r'who will be.*president.*(203|204|205)',  # 远期总统预测
+    r'next\s*pope',  # 教皇
+    r'alien|ufo|extraterrestrial',  # UFO
+    r'world\s*war\s*(3|iii|three)',  # 世界大战
 ]
 
 # 关键词到数据源的映射 (备用，当正则不匹配时)
@@ -68,6 +109,16 @@ KEYWORD_HINTS: Dict[str, Tuple[str, int, str]] = {
     'ethereum': ('Crypto', 4, '无预测 edge'),
     'btc': ('Crypto', 4, '无预测 edge'),
     'eth': ('Crypto', 4, '无预测 edge'),
+    
+    # Tier 3: 政治/新闻可研究
+    'nominate': ('Nomination', 3, '官方提名 + 新闻'),
+    'fed chair': ('FedChair', 3, '白宫提名 + 参议院确认'),
+    'impeach': ('Impeachment', 3, '国会记录 + 新闻'),
+    'greenland': ('ForeignPolicy', 3, '外交新闻 + 官方声明'),
+    'resign': ('LeaderChange', 3, '官方声明 + 新闻'),
+    'primary': ('Primary', 3, '选举结果 + 民调'),
+    'midterm': ('Election', 3, '选举结果 + 民调'),
+    'supreme court': ('SCOTUS', 3, '法院公告 + 新闻'),
 }
 
 
@@ -79,12 +130,23 @@ def detect_sources(rules_primary: str, title: str = "") -> Dict:
         {
             "verifiable": bool,
             "sources": ["BLS", "BEA", ...],
-            "research_tier": 1-3 (1=最高),
+            "research_tier": 1-3 (1=最高, 9=纯猜测),
             "research_method": "具体研究方法",
-            "detection_method": "regex|keyword|none"
+            "detection_method": "regex|keyword|speculation|none"
         }
     """
     text = f"{rules_primary} {title}".lower()
+    
+    # 0. 先检查是否是纯猜测市场 (强制 Tier 9)
+    for pattern in SPECULATION_PATTERNS:
+        if re.search(pattern, text, re.IGNORECASE):
+            return {
+                "verifiable": True,  # 结算时可验证
+                "sources": [],
+                "research_tier": 9,
+                "research_method": "纯猜测，无有效研究方法",
+                "detection_method": "speculation",
+            }
     
     found_sources = []
     best_tier = 9
