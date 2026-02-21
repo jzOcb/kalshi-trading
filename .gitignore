@@ -8,3 +8,8 @@ trades_backup_*.json
 scan-*.md
 *.flag
 /tmp/
+
+# Secrets
+*.pem
+*.key
+kalshi_private_key*
