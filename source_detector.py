@@ -34,6 +34,9 @@ OFFICIAL_SOURCE_PATTERNS: List[Tuple[str, str, int, str]] = [
     (r'coinmarketcap|coingecko|binance|coinbase', 'Crypto', 4, '无预测 edge'),
     (r'nyse|nasdaq|s&p\s*500|dow jones', 'Exchange', 4, '无预测 edge'),
     
+    # Tier 2: 可验证的官方行为 (Executive Orders, 签署法案等)
+    (r'executive order|sign.*(order|bill|act)|federal register', 'WhiteHouse', 2, '白宫公告 + Federal Register'),
+    
     # Tier 3: 官方公告/新闻驱动
     (r'whitehouse\.gov|white house', 'WhiteHouse', 3, '白宫公告 + 新闻'),
     (r'ustr\.gov|trade representative', 'USTR', 3, 'USTR 贸易公告'),
