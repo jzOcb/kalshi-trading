@@ -1,311 +1,325 @@
 #!/usr/bin/env python3
 """
-Nowcast Data Fetcher - 获取实时预测数据
+Nowcast Fetcher - Fetches real-time economic nowcasts from official sources.
 
-支持的数据源:
-1. Atlanta Fed GDPNow - GDP 实时预测
-2. Cleveland Fed Inflation Nowcast - CPI 预测
-3. CME FedWatch - Fed 利率预测概率
-
-Author: OpenClaw
-Date: 2026-02-21
+Data Sources:
+- GDPNow: Atlanta Fed RSS feed (https://www.atlantafed.org/rss/GDPNow)
+- CPI Nowcast: Cleveland Fed JSON API (https://www.clevelandfed.org/-/media/files/webcharts/inflationnowcasting/nowcast_month.json)
+- Cleveland Fed Quarterly: https://www.clevelandfed.org/-/media/files/webcharts/inflationnowcasting/nowcast_quarter.json
 """
 
-import os
-import re
 import json
-from datetime import datetime, timezone
-from typing import Optional, Dict, List
-from pathlib import Path
+import re
+import urllib.request
+from datetime import datetime
+from typing import Optional, Dict, Any
 
-try:
-    import requests
-except ImportError:
-    requests = None
 
-CACHE_DIR = Path(__file__).parent / "cache"
-CACHE_TTL = 3600 * 2  # 2 hours
+def fetch_gdpnow() -> Dict[str, Any]:
+    """
+    Fetch GDPNow GDP growth forecast from Atlanta Fed RSS feed.
+    
+    Returns:
+        Dict with 'value' (float), 'date' (str), 'quarter' (str), 'source' (str)
+    """
+    url = "https://www.atlantafed.org/rss/GDPNow"
+    
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            content = resp.read().decode('utf-8')
+        
+        # Parse RSS content for latest GDPNow estimate
+        # Look for pattern like "3.1 percent" in description
+        match = re.search(r'([+-]?\d+\.?\d*)\s*percent', content, re.IGNORECASE)
+        if match:
+            value = float(match.group(1))
+            
+            # Extract date from pubDate
+            date_match = re.search(r'<pubDate>([^<]+)</pubDate>', content)
+            pub_date = date_match.group(1) if date_match else datetime.now().strftime('%Y-%m-%d')
+            
+            # Extract quarter info
+            quarter_match = re.search(r'(Q[1-4]\s*\d{4}|\d{4}:Q[1-4])', content)
+            quarter = quarter_match.group(1) if quarter_match else "Current"
+            
+            return {
+                'value': value,
+                'date': pub_date,
+                'quarter': quarter,
+                'source': 'Atlanta Fed GDPNow RSS',
+                'url': url
+            }
+    except Exception as e:
+        print(f"[GDPNow] Error fetching RSS: {e}")
+    
+    # Fallback: scrape the main page
+    try:
+        page_url = "https://www.atlantafed.org/cqer/research/gdpnow"
+        req = urllib.request.Request(page_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            content = resp.read().decode('utf-8')
+        
+        # Look for the estimate value
+        match = re.search(r'([+-]?\d+\.?\d*)\s*percent', content, re.IGNORECASE)
+        if match:
+            return {
+                'value': float(match.group(1)),
+                'date': datetime.now().strftime('%Y-%m-%d'),
+                'quarter': 'Current',
+                'source': 'Atlanta Fed GDPNow Page',
+                'url': page_url
+            }
+    except Exception as e:
+        print(f"[GDPNow] Error fetching page: {e}")
+    
+    return {
+        'value': None,
+        'error': 'Failed to fetch GDPNow data',
+        'source': 'Atlanta Fed GDPNow'
+    }
+
+
+def fetch_cleveland_fed_cpi(recent_only: bool = True, num_quarters: int = 4) -> Dict[str, Any]:
+    """
+    Fetch CPI inflation nowcast from Cleveland Fed JSON API.
+    
+    Args:
+        recent_only: If True, only return the most recent quarters
+        num_quarters: Number of recent quarters to return
+    
+    Returns:
+        Dict with CPI, Core CPI, PCE, Core PCE nowcasts and metadata
+    """
+    url = "https://www.clevelandfed.org/-/media/files/webcharts/inflationnowcasting/nowcast_quarter.json"
+    
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            content = resp.read().decode('utf-8')
+        
+        # Parse JSON - it's an array of quarters
+        data = json.loads(content)
+        
+        # Get only recent quarters if requested
+        if recent_only:
+            data = data[-num_quarters:]
+        
+        result = {
+            'quarters': [],
+            'source': 'Cleveland Fed Inflation Nowcasting',
+            'url': url,
+            'fetched_at': datetime.now().isoformat()
+        }
+        
+        for quarter_data in data:
+            chart = quarter_data.get('chart', {})
+            quarter_name = chart.get('subcaption', 'Unknown')
+            
+            quarter_result = {
+                'quarter': quarter_name,
+                'cpi': None,
+                'core_cpi': None,
+                'pce': None,
+                'core_pce': None
+            }
+            
+            # Parse dataset to extract latest values
+            dataset = quarter_data.get('dataset', [])
+            for series in dataset:
+                series_name = series.get('seriesname', '').lower()
+                data_points = series.get('data', [])
+                
+                # Get the last non-empty value
+                for point in reversed(data_points):
+                    value = point.get('value', '')
+                    if value and value.strip():
+                        try:
+                            val = float(value)
+                            if 'core cpi' in series_name and 'actual' not in series_name:
+                                quarter_result['core_cpi'] = val
+                            elif 'cpi' in series_name and 'actual' not in series_name:
+                                quarter_result['cpi'] = val
+                            elif 'core pce' in series_name and 'actual' not in series_name:
+                                quarter_result['core_pce'] = val
+                            elif 'pce' in series_name and 'actual' not in series_name:
+                                quarter_result['pce'] = val
+                            break
+                        except ValueError:
+                            continue
+            
+            result['quarters'].append(quarter_result)
+        
+        return result
+        
+    except Exception as e:
+        print(f"[Cleveland Fed] Error: {e}")
+        return {
+            'error': str(e),
+            'source': 'Cleveland Fed Inflation Nowcasting'
+        }
+
+
+def get_latest_cpi_nowcast() -> Optional[float]:
+    """Get the latest CPI inflation nowcast value."""
+    data = fetch_cleveland_fed_cpi()
+    if 'quarters' in data and data['quarters']:
+        # Return the most recent quarter's CPI
+        for q in reversed(data['quarters']):
+            if q.get('cpi') is not None:
+                return q['cpi']
+    return None
+
+
+def get_latest_gdp_nowcast() -> Optional[float]:
+    """Get the latest GDP nowcast value."""
+    data = fetch_gdpnow()
+    return data.get('value')
+
+
+def fetch_all_nowcasts() -> Dict[str, Any]:
+    """Fetch all nowcasts and return combined data."""
+    return {
+        'gdp': fetch_gdpnow(),
+        'inflation': fetch_cleveland_fed_cpi(),
+        'timestamp': datetime.now().isoformat()
+    }
 
 
 class NowcastFetcher:
-    """获取各类 Nowcast 数据"""
+    """Wrapper class for compatibility with kalshi_pipeline.py"""
     
-    def __init__(self, use_cache: bool = True):
-        self.use_cache = use_cache
-        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    def __init__(self):
+        self._gdp_cache = None
+        self._cpi_cache = None
+        self._cache_time = None
     
-    def _get_cache(self, key: str) -> Optional[Dict]:
-        """获取缓存"""
-        if not self.use_cache:
-            return None
-        
-        cache_file = CACHE_DIR / f"nowcast_{key}.json"
-        if cache_file.exists():
-            try:
-                with open(cache_file) as f:
-                    data = json.load(f)
-                # 检查是否过期
-                cached_at = data.get("cached_at", 0)
-                if datetime.now().timestamp() - cached_at < CACHE_TTL:
-                    return data
-            except:
-                pass
-        return None
-    
-    def _set_cache(self, key: str, data: Dict):
-        """设置缓存"""
-        if not self.use_cache:
+    def _refresh_cache(self):
+        """Refresh cache if older than 5 minutes."""
+        now = datetime.now()
+        if self._cache_time and (now - self._cache_time).seconds < 300:
             return
         
-        cache_file = CACHE_DIR / f"nowcast_{key}.json"
-        data["cached_at"] = datetime.now().timestamp()
-        with open(cache_file, "w") as f:
-            json.dump(data, f)
+        self._gdp_cache = fetch_gdpnow()
+        self._cpi_cache = fetch_cleveland_fed_cpi(recent_only=True, num_quarters=4)
+        self._cache_time = now
     
-    def get_gdpnow(self) -> Optional[Dict]:
+    def get_for_market(self, series: str, threshold: float) -> Optional[Dict[str, Any]]:
         """
-        获取 Atlanta Fed GDPNow 预测
-        
-        Returns:
-            {
-                "value": 2.3,        # 当前预测值 (%)
-                "quarter": "Q1 2026",
-                "updated": "2026-02-19",
-                "source": "Atlanta Fed GDPNow"
-            }
-        """
-        cached = self._get_cache("gdpnow")
-        if cached:
-            return cached
-        
-        try:
-            # GDPNow XML feed
-            url = "https://www.atlantafed.org/-/media/documents/cqer/researchcq/gdpnow/gdpnow-forecast-evolution.xml"
-            resp = requests.get(url, timeout=15)
-            
-            if resp.status_code == 200:
-                # 解析 XML (简单正则)
-                text = resp.text
-                
-                # 查找最新预测值
-                # <GDPNow>2.3</GDPNow> 或类似格式
-                match = re.search(r'<Forecast[^>]*>([0-9.]+)</Forecast>', text)
-                if not match:
-                    match = re.search(r'>([0-9.]+)%?\s*</', text)
-                
-                if match:
-                    value = float(match.group(1))
-                    data = {
-                        "value": value,
-                        "quarter": "Q1 2026",  # TODO: 动态获取
-                        "updated": datetime.now().strftime("%Y-%m-%d"),
-                        "source": "Atlanta Fed GDPNow"
-                    }
-                    self._set_cache("gdpnow", data)
-                    return data
-        except Exception as e:
-            print(f"GDPNow fetch error: {e}")
-        
-        # Fallback: 使用已知的最新值
-        return {
-            "value": 2.3,  # 需要手动更新
-            "quarter": "Q1 2026",
-            "updated": "2026-02-20",
-            "source": "Atlanta Fed GDPNow (cached)",
-            "is_fallback": True
-        }
-    
-    def get_cpi_nowcast(self) -> Optional[Dict]:
-        """
-        获取 Cleveland Fed Inflation Nowcast
-        
-        Returns:
-            {
-                "value": 0.3,        # 月度 CPI 预测 (%)
-                "annual": 2.8,       # 年化 CPI 预测 (%)
-                "month": "February 2026",
-                "source": "Cleveland Fed"
-            }
-        """
-        cached = self._get_cache("cpi_nowcast")
-        if cached:
-            return cached
-        
-        try:
-            # Cleveland Fed Nowcast 页面
-            url = "https://www.clevelandfed.org/indicators-and-data/inflation-nowcasting"
-            resp = requests.get(url, timeout=15, headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
-            })
-            
-            if resp.status_code == 200:
-                text = resp.text
-                
-                # 查找月度 CPI 预测
-                # 通常格式: "0.3%" 或 "0.30%"
-                match = re.search(r'CPI[^0-9]*([0-9]+\.[0-9]+)%', text, re.IGNORECASE)
-                if match:
-                    value = float(match.group(1))
-                    data = {
-                        "value": value,
-                        "month": datetime.now().strftime("%B %Y"),
-                        "source": "Cleveland Fed Inflation Nowcast"
-                    }
-                    self._set_cache("cpi_nowcast", data)
-                    return data
-        except Exception as e:
-            print(f"CPI Nowcast fetch error: {e}")
-        
-        # Fallback
-        return {
-            "value": 0.3,  # 典型值
-            "month": "February 2026",
-            "source": "Cleveland Fed (estimated)",
-            "is_fallback": True
-        }
-    
-    def get_fedwatch(self) -> Optional[Dict]:
-        """
-        获取 CME FedWatch 利率预测概率
-        
-        Returns:
-            {
-                "next_meeting": "March 2026",
-                "current_rate": 4.25,
-                "probabilities": {
-                    "cut_50": 5.0,     # 降息 50bp 概率
-                    "cut_25": 20.0,    # 降息 25bp 概率
-                    "hold": 70.0,      # 维持不变概率
-                    "hike_25": 5.0,    # 加息 25bp 概率
-                },
-                "source": "CME FedWatch"
-            }
-        """
-        cached = self._get_cache("fedwatch")
-        if cached:
-            return cached
-        
-        # CME FedWatch 需要 API key 或复杂爬虫
-        # 这里返回 fallback 值
-        return {
-            "next_meeting": "March 2026",
-            "current_rate": 4.25,
-            "probabilities": {
-                "cut_50": 5.0,
-                "cut_25": 25.0,
-                "hold": 65.0,
-                "hike_25": 5.0,
-            },
-            "source": "CME FedWatch (estimated)",
-            "is_fallback": True
-        }
-    
-    def get_for_market(self, series: str, threshold: float = None) -> Optional[Dict]:
-        """
-        根据市场 series 获取相关 Nowcast
+        Get nowcast data for a specific market.
         
         Args:
-            series: 市场 series (如 KXGDP, KXCPI, KXFED)
-            threshold: 市场阈值 (如 GDP > 2.0%)
+            series: Series ticker (e.g., "KXGDP", "KXCPI")
+            threshold: Market threshold (e.g., 2.5 for "above 2.5%")
         
         Returns:
-            {
-                "nowcast_value": 2.3,
-                "threshold": 2.0,
-                "direction": "above",  # 预测值 > 阈值
-                "confidence": 0.8,     # 距离阈值的置信度
-                "source": "..."
-            }
+            Dict with nowcast_value, threshold, direction, z_score, confidence, source
         """
+        self._refresh_cache()
+        
         series_upper = series.upper()
         
         if "GDP" in series_upper:
-            data = self.get_gdpnow()
-            if data and threshold is not None:
-                nowcast = data["value"]
-                direction = "above" if nowcast > threshold else "below"
-                # 简单置信度: 距离阈值越远越高
-                distance = abs(nowcast - threshold)
-                confidence = min(1.0, distance / 1.0)  # 1% 距离 = 100% 置信
-                return {
-                    "nowcast_value": nowcast,
-                    "threshold": threshold,
-                    "direction": direction,
-                    "confidence": confidence,
-                    "z_score": distance / 0.5,  # σ ≈ 0.5% for GDP
-                    "source": data["source"],
-                }
-            return data
-        
+            return self._get_gdp_nowcast(threshold)
         elif "CPI" in series_upper:
-            data = self.get_cpi_nowcast()
-            if data and threshold is not None:
-                nowcast = data["value"]
-                direction = "above" if nowcast > threshold else "below"
-                distance = abs(nowcast - threshold)
-                confidence = min(1.0, distance / 0.2)  # 0.2% 距离 = 100% 置信
-                return {
-                    "nowcast_value": nowcast,
-                    "threshold": threshold,
-                    "direction": direction,
-                    "confidence": confidence,
-                    "z_score": distance / 0.1,  # σ ≈ 0.1% for CPI
-                    "source": data["source"],
-                }
-            return data
+            return self._get_cpi_nowcast(threshold)
+        elif "FED" in series_upper:
+            # Fed rate decisions - would need CME FedWatch
+            return None
         
-        elif "FED" in series_upper or "FOMC" in series_upper:
-            data = self.get_fedwatch()
-            if data and threshold is not None:
-                # Fed 市场: 预测利率是否高于阈值
-                current = data["current_rate"]
-                probs = data["probabilities"]
+        return None
+    
+    def _get_gdp_nowcast(self, threshold: float) -> Optional[Dict[str, Any]]:
+        """Get GDP nowcast signal."""
+        if not self._gdp_cache or self._gdp_cache.get('value') is None:
+            return None
+        
+        nowcast_value = self._gdp_cache['value']
+        
+        # Calculate z-score (assuming ~0.5% historical std)
+        historical_std = 0.5
+        z_score = (nowcast_value - threshold) / historical_std
+        
+        direction = "yes" if nowcast_value > threshold else "no"
+        confidence = min(1.0, abs(z_score) / 2)
+        
+        return {
+            "nowcast_value": nowcast_value,
+            "threshold": threshold,
+            "direction": direction,
+            "z_score": z_score,
+            "confidence": confidence,
+            "source": "Atlanta Fed GDPNow"
+        }
+    
+    def _get_cpi_nowcast(self, threshold: float) -> Optional[Dict[str, Any]]:
+        """Get CPI nowcast signal."""
+        if not self._cpi_cache or 'quarters' not in self._cpi_cache:
+            return None
+        
+        # Get most recent quarter with CPI data
+        for q in reversed(self._cpi_cache['quarters']):
+            if q.get('cpi') is not None:
+                nowcast_value = q['cpi']
                 
-                # 简化: 如果维持不变概率高，预测利率不变
-                if probs["hold"] > 60:
-                    predicted_rate = current
-                elif probs["cut_25"] + probs["cut_50"] > 50:
-                    predicted_rate = current - 0.25
-                else:
-                    predicted_rate = current + 0.25
+                # Calculate z-score (assuming ~0.3% historical std for CPI)
+                historical_std = 0.3
+                z_score = (nowcast_value - threshold) / historical_std
                 
-                direction = "above" if predicted_rate > threshold else "below"
-                confidence = max(probs.values()) / 100
+                direction = "yes" if nowcast_value > threshold else "no"
+                confidence = min(1.0, abs(z_score) / 2)
                 
                 return {
-                    "nowcast_value": predicted_rate,
+                    "nowcast_value": round(nowcast_value, 2),
                     "threshold": threshold,
                     "direction": direction,
+                    "z_score": z_score,
                     "confidence": confidence,
-                    "z_score": confidence * 2,  # 简化
-                    "source": data["source"],
-                    "probabilities": probs,
+                    "source": f"Cleveland Fed ({q['quarter']})"
                 }
-            return data
         
         return None
 
 
-def test():
-    """测试 Nowcast 获取"""
-    fetcher = NowcastFetcher(use_cache=False)
-    
-    print("=== GDP Now ===")
-    gdp = fetcher.get_gdpnow()
-    print(json.dumps(gdp, indent=2))
-    
-    print("\n=== CPI Nowcast ===")
-    cpi = fetcher.get_cpi_nowcast()
-    print(json.dumps(cpi, indent=2))
-    
-    print("\n=== FedWatch ===")
-    fed = fetcher.get_fedwatch()
-    print(json.dumps(fed, indent=2))
-    
-    print("\n=== GDP Market (threshold 2.0%) ===")
-    gdp_market = fetcher.get_for_market("KXGDP", threshold=2.0)
-    print(json.dumps(gdp_market, indent=2))
-
-
 if __name__ == "__main__":
-    test()
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == '--json':
+        print(json.dumps(fetch_all_nowcasts(), indent=2))
+    else:
+        print("=" * 60)
+        print("ECONOMIC NOWCAST REPORT")
+        print("=" * 60)
+        print(f"Fetched: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print()
+        
+        # GDP
+        gdp = fetch_gdpnow()
+        print("📊 GDP NOWCAST (Atlanta Fed GDPNow)")
+        if gdp.get('value') is not None:
+            print(f"   Value: {gdp['value']:.1f}%")
+            print(f"   Quarter: {gdp.get('quarter', 'N/A')}")
+            print(f"   Date: {gdp.get('date', 'N/A')}")
+        else:
+            print(f"   Error: {gdp.get('error', 'Unknown error')}")
+        print()
+        
+        # Inflation
+        inflation = fetch_cleveland_fed_cpi()
+        print("📈 INFLATION NOWCAST (Cleveland Fed)")
+        if 'quarters' in inflation:
+            for q in inflation['quarters']:
+                print(f"\n   {q['quarter']}:")
+                if q.get('cpi') is not None:
+                    print(f"     CPI: {q['cpi']:.2f}%")
+                if q.get('core_cpi') is not None:
+                    print(f"     Core CPI: {q['core_cpi']:.2f}%")
+                if q.get('pce') is not None:
+                    print(f"     PCE: {q['pce']:.2f}%")
+                if q.get('core_pce') is not None:
+                    print(f"     Core PCE: {q['core_pce']:.2f}%")
+        else:
+            print(f"   Error: {inflation.get('error', 'Unknown error')}")
+        
+        print()
+        print("=" * 60)

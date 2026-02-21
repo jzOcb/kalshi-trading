@@ -1,18 +1,14 @@
 {
   "series": [
-    "kxfedmention-26mar-pard",
-    "kxfeddissent-26mar-step",
-    "kxfedmention-26mar-unce",
-    "kxusdjpy-26feb2310",
     "kxfedmention-26mar-gas",
-    "kxfedcombo-26mar-25c",
-    "kxpayrolls-26mar",
-    "kxxrpd-26feb2717"
+    "kxpayrolls-26feb",
+    "kxdhsfund-26apr01",
+    "kxfedmention-26mar-unce",
+    "kxxrp-26feb2717-b1.4099500",
+    "kxbillcontemptvote-26mar01-309",
+    "kxbillclintonpublic-26mar01",
+    "kxfedmention-26mar-adp"
   ],
-  "positions": {
-    "1. KXHIGHLAX-26FEB20-B58.5 NO": 1,
-    "2. KXHIGHLAX-26FEB20-B60.5 NO": 99,
-    "3. KXHIGHTBOS-26FEB20-B36.5 NO": 1
-  },
-  "timestamp": "2026-02-21T14:01:04.205396"
+  "positions": {},
+  "timestamp": "2026-02-21T15:01:10.137107"
 }

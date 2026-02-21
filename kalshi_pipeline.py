@@ -42,12 +42,23 @@ API_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 WATCHLIST_FILE = Path(__file__).parent / "data" / "watchlist_series.json"
 RESULTS_FILE = Path(__file__).parent / "data" / "pipeline_results.json"
 
-# 置信度分级
+# 置信度分级 (动态仓位由 position_calculator 计算)
 CONFIDENCE_THRESHOLDS = {
-    "HIGH": {"z_min": 1.0, "tier_max": 1, "position": "$100-200"},
-    "MEDIUM": {"z_min": 0.5, "tier_max": 2, "position": "$50-100"},
-    "LOW": {"z_min": 0.0, "tier_max": 9, "position": "观望"},
+    "HIGH": {"z_min": 1.0, "tier_max": 1},
+    "MEDIUM": {"z_min": 0.5, "tier_max": 2},
+    "LOW": {"z_min": 0.0, "tier_max": 9},
 }
+
+# 动态仓位计算器 (懒加载)
+_position_calculator = None
+
+def get_position_calculator():
+    """获取仓位计算器实例"""
+    global _position_calculator
+    if _position_calculator is None:
+        from position_calculator import PositionCalculator
+        _position_calculator = PositionCalculator()
+    return _position_calculator
 
 
 def load_watchlist() -> List[str]:
@@ -240,8 +251,14 @@ def format_recommendation(market: Dict, research: Dict) -> str:
     confidence = calculate_confidence(research)
     conf_emoji = "🟢" if confidence == "HIGH" else "🟡" if confidence == "MEDIUM" else "🔴"
     
-    # 建议仓位
-    position = CONFIDENCE_THRESHOLDS[confidence]["position"]
+    # 动态计算建议仓位
+    try:
+        calc = get_position_calculator()
+        pos_result = calc.calculate(confidence, price)
+        position = calc.format_recommendation(pos_result)
+    except Exception as e:
+        # 降级到默认值
+        position = {"HIGH": "$100-200", "MEDIUM": "$50-100", "LOW": "观望"}.get(confidence, "观望")
     
     # 数据源
     sources = market.get("_sources", [])
@@ -265,7 +282,8 @@ def format_recommendation(market: Dict, research: Dict) -> str:
         f"{conf_emoji} {'BUY' if confidence != 'LOW' else 'WATCH'} — 置信度 {confidence}",
         "",
         f"📌 {title}",
-        f"👉 {direction} @ {cost}¢ | 建议仓位 {position}",
+        f"👉 {direction} @ {cost}¢",
+        f"{position}",
         "",
         f"📊 {ann_return}% 年化 ({days_left}天) | spread {spread}¢ | 量 {volume//1000}K",
         "",

@@ -1,4 +1,16 @@
 {
-  "positions": [],
-  "updated_at": "2026-02-21T09:00:02.392711"
+  "positions": [
+    {
+      "ticker": "KXHIGHNY-26FEB21-B47.5",
+      "side": "NO",
+      "contracts": 4,
+      "entry_price": 64,
+      "cost": 2.56,
+      "payout": 4,
+      "settles": "2026-02-21",
+      "account": "\u526f\u8d26\u53f7",
+      "account_id": "weather"
+    }
+  ],
+  "updated_at": "2026-02-21T10:00:02.154808"
 }

@@ -1,5 +1,35 @@
 # Kalshi Scanner Architecture
 
+## 核心架构 (2026-02-21)
+
+```
+market_census.py ──[每周]──> data/watchlist_series.json
+                                     │
+                                     ▼
+kalshi_pipeline.py ──[主流水线]──> 筛选 → 深度研究 → 报告
+        ↑                                    │
+        │                                    ▼
+report_v2.py ──[hourly cron]──────────> 快速扫描报告
+        ↑
+        │
+smart_reporter.py ──[调度]──> FULL(9AM/6PM) / DELTA / SKIP
+```
+
+**关键脚本 (26个)**:
+- `market_census.py` - 每周全量发现 series
+- `kalshi_pipeline.py` - 完整流水线 (筛选+深度研究+Nowcast)
+- `report_v2.py` - 快速扫描 (被 cron 调用)
+- `smart_reporter.py` - 智能调度
+- `source_detector.py` - 数据源检测
+- `market_researcher_v2.py` - 深度研究器
+- `nowcast_fetcher.py` - 获取 Nowcast 数据
+
+**备份文件** (已移至 backup/):
+- generate_report.py - 被 kalshi_pipeline 取代
+- deep_research_report_v2.py - 被 kalshi_pipeline 取代
+
+---
+
 ## 问题根源
 
 Kalshi API 特性：
