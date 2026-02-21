@@ -34,6 +34,36 @@ DATA_DIR = Path(__file__).parent / "data"
 CENSUS_FILE = DATA_DIR / "market_census.json"
 WATCHLIST_FILE = DATA_DIR / "watchlist_series.json"
 
+# 已知的重要 series (优先扫描)
+# 分层: Tier 1 有 Nowcast, Tier 2 有官方数据源
+PRIORITY_SERIES = [
+    # Tier 1 - 有 Nowcast 数据
+    "KXGDP",           # GDP - Atlanta Fed GDPNow
+    "KXCPI",           # CPI - Cleveland Fed Nowcast
+    "KXPCE",           # PCE - BEA
+    "KXFED",           # Fed rate - CME FedWatch
+    "KXFOMC",          # FOMC decisions
+    "KXRATECUTCOUNT",  # Rate cut count
+    "KXJOBLESS",       # Jobless claims - DOL
+    "KXUNEMPLOY",      # Unemployment - BLS
+    # Tier 2 - 有官方数据源
+    "KXAAGAS",         # AAA Gas price
+    "KXGASMAX",        # Gas max
+    "KXGASAVG",        # Gas average
+    "KXSHUTDOWN",      # Government shutdown
+    "KXDHSFUND",       # DHS funding
+    "KXDEBT",          # Debt ceiling
+    "KXTARIFF",        # Tariffs
+    "KXRECESSION",     # Recession
+    "KXCR",            # Continuing resolution
+    # Tier 2 - 政治 (可验证)
+    "KXEOWEEK",        # Executive orders (weekly)
+    "KXEOTRUMPTERM",   # Executive orders (term)
+    "KXBILLSIGNED",    # Bills signed
+    "KXCABINET",       # Cabinet confirmations
+    "KXSCOTUS",        # Supreme Court
+]
+
 
 class MarketCensus:
     """Kalshi 市场普查"""
@@ -146,6 +176,96 @@ class MarketCensus:
             return match.group(1)
         
         return ticker.split("-")[0] if "-" in ticker else ticker
+    
+    def fetch_markets_by_series(self, series_ticker: str) -> List[Dict]:
+        """获取特定 series 的所有市场"""
+        markets = []
+        cursor = None
+        
+        for page in range(50):  # 每个 series 最多 5000 个市场
+            try:
+                params = {
+                    "limit": 100,
+                    "series_ticker": series_ticker,
+                    "status": "open"
+                }
+                if cursor:
+                    params["cursor"] = cursor
+                
+                resp = requests.get(f"{API_BASE}/markets", params=params, timeout=15)
+                
+                if resp.status_code == 429:
+                    time.sleep(3)
+                    continue
+                
+                if resp.status_code != 200:
+                    break
+                
+                data = resp.json()
+                batch = data.get("markets", [])
+                markets.extend(batch)
+                
+                cursor = data.get("cursor")
+                if not cursor or len(batch) < 100:
+                    break
+                
+                time.sleep(0.15)  # 限流保护
+                    
+            except Exception as e:
+                print(f"      ⚠️ {series_ticker} error: {e}")
+                break
+        
+        return markets
+    
+    def scan_priority_series(self) -> Dict[str, Dict]:
+        """扫描优先 series 列表"""
+        print("📡 扫描优先 Series...")
+        results = {}
+        
+        for i, series in enumerate(PRIORITY_SERIES):
+            markets = self.fetch_markets_by_series(series)
+            
+            if not markets:
+                continue
+            
+            # 获取第一个市场的 rules 来检测 tier
+            rules = markets[0].get("rules_primary", "")
+            title = markets[0].get("title", "")
+            result = detect_sources(rules, title)
+            
+            # 计算统计
+            total_volume = sum(m.get("volume_24h", 0) or 0 for m in markets)
+            close_times = [m.get("close_time") for m in markets if m.get("close_time")]
+            earliest = min(close_times) if close_times else None
+            
+            # 计算天数
+            days_left = None
+            if earliest:
+                try:
+                    close_dt = datetime.fromisoformat(earliest.replace("Z", "+00:00"))
+                    days_left = (close_dt - datetime.now(timezone.utc)).days
+                except:
+                    pass
+            
+            results[series] = {
+                "series_ticker": series,
+                "market_count": len(markets),
+                "tier": result.get("research_tier", 9),
+                "sources": result.get("sources", []),
+                "research_method": result.get("research_method", ""),
+                "total_volume": total_volume,
+                "days_left": days_left,
+                "earliest_close": earliest,
+                "sample_title": title[:80] if title else "",
+            }
+            
+            tier_icon = "🟢" if result.get("research_tier", 9) <= 2 else "🟡" if result.get("research_tier", 9) <= 4 else "⚪"
+            print(f"   {tier_icon} {series}: {len(markets)} markets, tier {result.get('research_tier', 9)}")
+            
+            time.sleep(0.2)
+        
+        print(f"   ✅ 扫描完成: {len(results)} 个活跃 series")
+        return results
     
     def analyze_markets(self, markets: List[Dict]):
         """分析所有市场，按 series 分组"""
@@ -397,36 +517,102 @@ class MarketCensus:
             self.print_summary(report)
             return report
         
-        # 1. 获取所有 events
-        events_by_cat = self.fetch_events_by_category()
+        # 1. 扫描优先 series (经济/政治)
+        priority_results = self.scan_priority_series()
         
-        print("\n📊 Events 分布:")
-        for cat, evts in sorted(events_by_cat.items(), key=lambda x: -len(x[1])):
-            print(f"   {cat}: {len(evts)}")
+        # 2. 生成报告
+        report = self.generate_priority_report(priority_results)
         
-        # 2. 优先处理有意义的类别
-        priority_categories = ["Economics", "Politics", "Financials", "Elections", "World"]
-        other_categories = [c for c in events_by_cat.keys() if c not in priority_categories]
+        # 3. 保存
+        self.save_priority_census(report)
         
-        all_events = []
-        for cat in priority_categories:
-            all_events.extend(events_by_cat.get(cat, []))
-        # 其他类别也加入
-        for cat in other_categories:
-            all_events.extend(events_by_cat.get(cat, []))
+        # 4. 打印摘要
+        self.print_summary(report)
         
-        print(f"\n📡 获取 {len(all_events)} 个 events 的 markets...")
-        self.markets = self.fetch_markets_for_events(all_events)
-        print(f"   ✅ 共获取 {len(self.markets)} 个 markets")
+        return report
+    
+    def generate_priority_report(self, results: Dict[str, Dict]) -> Dict:
+        """从优先扫描结果生成报告"""
+        now = datetime.now(timezone.utc)
         
-        # 3. 分析
-        self.analyze_markets_v2(self.markets)
+        report = {
+            "generated_at": now.isoformat(),
+            "total_series": len(results),
+            "total_markets": sum(r["market_count"] for r in results.values()),
+            "by_tier": defaultdict(list),
+            "by_category": defaultdict(list),
+            "recommended_watchlist": [],
+            "series": results,
+        }
         
-        # 4. 生成报告
-        report = self.generate_report()
+        for series, info in results.items():
+            tier = info.get("tier", 9)
+            
+            series_info = {
+                "series_ticker": series,
+                "tier": tier,
+                "sources": info.get("sources", []),
+                "research_method": info.get("research_method", ""),
+                "market_count": info.get("market_count", 0),
+                "total_volume": info.get("total_volume", 0),
+                "days_left": info.get("days_left"),
+                "earliest_close": info.get("earliest_close"),
+                "sample_title": info.get("sample_title", ""),
+            }
+            
+            # 分类 (基于 series 名称推断)
+            category = "Unknown"
+            if series.startswith("KX"):
+                s_lower = series.lower()
+                if any(x in s_lower for x in ["gdp", "cpi", "pce", "job", "unemp", "gas"]):
+                    category = "Economics"
+                elif any(x in s_lower for x in ["fed", "fomc", "rate"]):
+                    category = "Fed"
+                elif any(x in s_lower for x in ["shutdown", "debt", "dhs", "tariff", "cr", "bill", "eo"]):
+                    category = "Government"
+                elif any(x in s_lower for x in ["trump", "cabinet", "scotus"]):
+                    category = "Politics"
+            
+            series_info["category"] = category
+            
+            report["by_tier"][f"tier_{tier}"].append(series_info)
+            report["by_category"][category].append(series_info)
+            
+            # 推荐: tier 1-2
+            if tier <= 2:
+                report["recommended_watchlist"].append(series_info)
         
-        # 5. 保存
-        self.save_census(report)
+        # 排序
+        report["recommended_watchlist"].sort(key=lambda x: (x["tier"], -(x.get("total_volume") or 0)))
+        
+        return report
+    
+    def save_priority_census(self, report: Dict):
+        """保存优先扫描结果"""
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        
+        # 保存完整报告
+        with open(CENSUS_FILE, "w") as f:
+            json.dump(report, f, indent=2, ensure_ascii=False, default=str)
+        print(f"💾 普查结果已保存: {CENSUS_FILE}")
+        
+        # 保存 watchlist (供 report_v2.py 使用)
+        watchlist = {
+            "updated": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "description": "Tier 1-2 可研究市场 watchlist (自动生成)",
+            "series": [s["series_ticker"] for s in report["recommended_watchlist"]],
+            "short_term": [
+                s for s in report["recommended_watchlist"] 
+                if s.get("days_left") is not None and s["days_left"] <= 90
+            ],
+            "long_term": [
+                s for s in report["recommended_watchlist"]
+                if s.get("days_left") is None or s["days_left"] > 90
+            ],
+        }
+        with open(WATCHLIST_FILE, "w") as f:
+            json.dump(watchlist, f, indent=2, ensure_ascii=False, default=str)
+        print(f"💾 Watchlist 已保存: {WATCHLIST_FILE}")
         
         # 6. 打印摘要
         self.print_summary(report)

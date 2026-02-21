@@ -40,35 +40,31 @@ import time
 from datetime import datetime, timezone, timedelta
 
 API_BASE = "https://api.elections.kalshi.com/trade-api/v2"
+WATCHLIST_FILE = os.path.join(os.path.dirname(__file__), "data", "watchlist_series.json")
 
-POLITICAL_SERIES = [
-    "KXGDP", "KXCPI", "KXFED", "KXGOVSHUTLENGTH",
-    "KXTRUMPMEETING", "KXGREENLAND", "KXSCOTUS", "KXRECESSION",
-    "KXUKRAINE", "KXIRAN", "KXBITCOIN", "KXSP500", "KXDOGE",
-    "KXGOVTCUTS", "KXGOVTSPEND", "KXDEBT", "KXCR",
-    "KXSHUTDOWNBY", "KXTARIFF", "KXFEDRATE",
-    "KXCABINET", "KXTERMINALRATE", "KXLOWESTRATE",
-    "KXTRUMPSAYNICKNAME", "KXTRUMPRESIGN", "KXTRUMPREMOVE",
-    "KXTRUMPPARDONFAMILY", "KXTRUMPAGCOUNT", "KXEOTRUMPTERM",
-    "KXTRUMPAPPROVALYEAR", "KXTRUMPPRES", "KXTRUMPRUN",
-    "KXIMPEACH", "KXMARTIAL", "KXNEXTPRESSEC", "KXNEXTDHSSEC",
-    "KXDEBTGROWTH", "KXACAREPEAL", "KXFREEIVF", "KXTAFTHARTLEY",
-    "KXBALANCEPOWERCOMBO", "KXCAPCONTROL", "KXDOED",
-    "KXSCOTUSPOWER", "KXJAN6CASES", "KXOBERGEFELL",
-    "KXUSDEBT", "KXLCPIMAXYOY",
-    "KXFEDCHAIRNOM", "KXFEDEMPLOYEES", "KXTRILLIONAIRE",
-    "KXKHAMENEIOUT", "KXGREENTERRITORY", "KXGREENLANDPRICE",
-    "KXCANAL", "KXNEWPOPE", "KXFULLTERMSKPRES",
-    "KXNEXTIRANLEADER", "KXPUTINDJTLOCATION",
-    "KXWITHDRAW", "KXUSAKIM", "KXRECOGSOMALI",
-    "KXFTA", "KXDJTVOSTARIFFS", "KXZELENSKYPUTIN",
-    "KXPRESNOMD", "KXVPRESNOMD", "KXPRESPARTY",
-    "KXHOUSERACE", "KXMUSKPRIMARY", "KXAOCSENATE",
-    "CONTROLH", "POWER",
-    "KXIPOSPACEX", "KXIPOFANNIE", "KXSPACEXBANKPUBLIC",
-    "KXTARIFFS",
-    "KXBILLSIGNED", "KXTRUMPBILLSSIGNED",
+# Fallback 硬编码列表 (当 watchlist 不存在时使用)
+FALLBACK_SERIES = [
+    "KXGDP", "KXCPI", "KXFED", "KXPCE", "KXJOBLESS", "KXUNEMPLOY",
+    "KXFOMC", "KXRATECUTCOUNT", "KXAAGAS", "KXGASMAX", "KXGASAVG",
+    "KXSHUTDOWN", "KXDHSFUND", "KXDEBT", "KXTARIFF", "KXRECESSION",
+    "KXCR", "KXEOWEEK", "KXEOTRUMPTERM", "KXBILLSIGNED", "KXCABINET",
 ]
+
+def load_watchlist_series():
+    """从 watchlist_series.json 加载 series 列表"""
+    try:
+        if os.path.exists(WATCHLIST_FILE):
+            with open(WATCHLIST_FILE) as f:
+                data = json.load(f)
+            series = data.get("series", [])
+            if series:
+                print(f"📋 从 watchlist 加载 {len(series)} 个 series", file=sys.stderr)
+                return series
+    except Exception as e:
+        print(f"⚠️ 读取 watchlist 失败: {e}", file=sys.stderr)
+    
+    print(f"📋 使用 fallback series ({len(FALLBACK_SERIES)} 个)", file=sys.stderr)
+    return FALLBACK_SERIES
 
 def api_get(endpoint, params=None):
     try:
