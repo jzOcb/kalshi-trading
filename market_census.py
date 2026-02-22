@@ -64,6 +64,8 @@ PRIORITY_SERIES = [
     "KXBILLSIGNED",    # Bills signed
     "KXCABINET",       # Cabinet confirmations
     "KXSCOTUS",        # Supreme Court
+    # Tier 2 - Powell Mentions (历史记录分析)
+    "KXFEDMENTION",    # Powell says X at press conference
 ]
 
 
