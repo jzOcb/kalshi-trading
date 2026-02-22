@@ -128,7 +128,43 @@ market_researcher_v2.py # 单市场深度研究
 └── backtest_researcher.py        # 历史回测验证
 ```
 
+## Kalshi URL 格式
+
+**正确格式** (可点击打开):
+```
+https://kalshi.com/markets/{series}/{slug}/{event_ticker}
+```
+
+**例子**:
+- CPI: `https://kalshi.com/markets/kxcpi/cpi/kxcpi-26feb`
+- GDP: `https://kalshi.com/markets/kxgdp/us-gdp-growth/kxgdp-26apr30`
+- Jobs: `https://kalshi.com/markets/kxpayrolls/jobs-numbers/kxpayrolls-26feb`
+- Fed Decision: `https://kalshi.com/markets/kxfeddecision/fed-meeting/kxfeddecision-26mar`
+
+**Slug 映射** (API 不返回，需要查表):
+
+| Series | Slug |
+|--------|------|
+| KXCPI | cpi |
+| KXCPICORE | cpi-core |
+| KXCPIYOY | inflation |
+| KXGDP | us-gdp-growth |
+| KXPAYROLLS | jobs-numbers |
+| KXFEDDECISION | fed-meeting |
+| KXFED | fed-funds-rate |
+| KXU3 | unemployment |
+| KXFEDMENTION | fed-mention |
+| KXHIGH | high-temperature |
+| KXLOW | low-temperature |
+
+**代码**: `~/clawd/kalshi/url_mapping.py`
+
+**Fallback**: 如果 series 不在映射表里，用 search:
+```
+https://kalshi.com/search?query={ticker}
+```
+
 ---
 
-**最后更新**: 2026-02-20
+**最后更新**: 2026-02-22
 **维护者**: OpenClaw

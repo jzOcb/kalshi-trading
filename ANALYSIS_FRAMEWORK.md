@@ -66,6 +66,24 @@
 - 核查：2025 月均只有 15K (下修后)
 - 结论：风险高于预期，88¢ 赔率不值
 
+## URL 格式
+
+给用户链接时用正确格式:
+
+```
+https://kalshi.com/markets/{series}/{slug}/{event_ticker}
+```
+
+**Slug 映射** (`url_mapping.py`):
+- KXCPI → cpi
+- KXGDP → us-gdp-growth
+- KXPAYROLLS → jobs-numbers
+- KXFED → fed-funds-rate
+
+**例子**:
+- `https://kalshi.com/markets/kxcpi/cpi/kxcpi-26feb`
+- `https://kalshi.com/markets/kxgdp/us-gdp-growth/kxgdp-26apr30`
+
 ---
 
 *此框架随案例积累持续更新*

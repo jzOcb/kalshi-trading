@@ -18,6 +18,13 @@ import requests
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+# Import URL mapping
+try:
+    from url_mapping import get_market_url
+except ImportError:
+    def get_market_url(event_ticker, ticker=None):
+        return f"https://kalshi.com/search?query={ticker or event_ticker}"
+
 API_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 WATCHLIST_FILE = Path(__file__).parent / "data" / "watchlist_series.json"
 OUTPUT_FILE = Path(__file__).parent / "data" / "candidates.json"
@@ -113,8 +120,12 @@ def filter_candidates(markets, min_volume=50):
         loss_per_50 = cost * 0.50
         odds = loss_per_50 / profit_per_50 if profit_per_50 > 0 else 99
         
+        event_ticker = m.get("event_ticker", "").lower()
+        ticker = m.get("ticker", "").lower()
+        
         candidates.append({
             "ticker": m.get("ticker"),
+            "event_ticker": m.get("event_ticker"),
             "title": m.get("title"),
             "rules_primary": m.get("rules_primary", ""),
             "price": price,
@@ -125,7 +136,7 @@ def filter_candidates(markets, min_volume=50):
             "profit_per_50": round(profit_per_50, 2),
             "loss_per_50": round(loss_per_50, 2),
             "odds": round(odds, 1),
-            "link": f"https://kalshi.com/markets/{m.get('ticker', '').lower()}",
+            "link": get_market_url(m.get("event_ticker", ""), m.get("ticker", "")),
         })
     
     # 按潜在收益排序 (价格越极端越好)
