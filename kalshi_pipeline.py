@@ -45,6 +45,7 @@ except ImportError:
 from source_detector import detect_sources
 from market_researcher_v2 import MarketResearcherV2
 from nowcast_fetcher import NowcastFetcher
+from market_validator import classify_market, get_checklist_prompt, validate_output, enforce_output
 
 API_BASE = "https://api.elections.kalshi.com/trade-api/v2"
 WATCHLIST_FILE = Path(__file__).parent / "data" / "watchlist_series.json"

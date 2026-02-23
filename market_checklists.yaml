@@ -1,0 +1,106 @@
+# Kalshi Market Validation Checklists
+# Used by market_validator.py to enforce pre-analysis checks
+# Each market type has required questions that MUST be answered before giving a recommendation
+
+economic:
+  description: "数据驱动的经济指标市场 (CPI, GDP, Fed rate, unemployment)"
+  keywords:
+    - CPI
+    - GDP
+    - FED
+    - FOMC
+    - INFLATION
+    - UNEMPLOYMENT
+    - BLS
+    - BEA
+    - RATE
+    - PAYROLL
+    - NFP
+    - PCE
+    - PPI
+  checklist:
+    - id: official_source
+      question: "官方结算数据源是什么？(BLS/BEA/Fed/etc)"
+      fail_if_empty: true
+    - id: latest_data
+      question: "最新官方数据值是多少？(含发布日期)"
+      fail_if_empty: true
+    - id: consensus
+      question: "市场 consensus/预测值是多少？(来源)"
+      fail_if_empty: true
+    - id: gap_analysis
+      question: "数据 vs Kalshi 定价的差距有多大？值得交易吗？"
+      fail_if_empty: true
+    - id: revision_risk
+      question: "是否有修正/重发风险？上次修正幅度？"
+      fail_if_empty: false
+
+event:
+  description: "事件驱动市场 (shutdown, strike, war, resignation)"
+  keywords:
+    - SHUTDOWN
+    - STRIKE
+    - WAR
+    - RESIGN
+    - IMPEACH
+    - VETO
+    - EXECUTIVE
+    - TARIFF
+    - SANCTION
+    - CEASE
+    - TREATY
+  checklist:
+    - id: event_type
+      question: "事件类型？(全面 vs 部分/limited)"
+      fail_if_empty: true
+    - id: start_date
+      question: "开始日期？(官方源确认，不能靠推测)"
+      fail_if_empty: true
+    - id: current_status
+      question: "当前状态？(进行多少天/是否已结束)"
+      fail_if_empty: true
+    - id: trigger
+      question: "触发原因/争议点是什么？"
+      fail_if_empty: true
+    - id: historical
+      question: "历史是否可比？(同类 vs 不同类先例)"
+      fail_if_empty: true
+
+weather:
+  description: "天气相关市场 (temperature, rain, snow)"
+  keywords:
+    - TEMP
+    - RAIN
+    - SNOW
+    - WEATHER
+    - HURRICANE
+    - HIGHTEMP
+    - LOWTEMP
+    - PRECIP
+  checklist:
+    - id: observation_station
+      question: "NWS 观测站是哪个？(station ID)"
+      fail_if_empty: true
+    - id: historical_data
+      question: "该城市该日期的历史温度范围？(近 10 年)"
+      fail_if_empty: true
+    - id: current_forecast
+      question: "当前 NWS 预报值？(含预报时间)"
+      fail_if_empty: true
+    - id: bracket_analysis
+      question: "预报值落在哪个 bracket？定价是否有 edge？"
+      fail_if_empty: true
+
+other:
+  description: "其他/未分类市场"
+  keywords: []
+  checklist:
+    - id: settlement_source
+      question: "结算数据源是什么？是否可客观验证？"
+      fail_if_empty: true
+    - id: verifiability
+      question: "结果是否可验证？(不可验证 → SKIP)"
+      fail_if_empty: true
+    - id: data_available
+      question: "有哪些可用数据支持判断？"
+      fail_if_empty: true
