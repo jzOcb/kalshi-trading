@@ -1,14 +1,14 @@
 {
   "series": [
-    "kxu3-26feb",
+    "kxpayrolls-26mar",
     "kxpayrolls-26feb",
-    "kxdhsfund-26apr01",
-    "kxaaagasw-26mar02-2.938",
     "kxeconstatu3-26feb",
-    "kxfedmention-26mar-pard",
-    "kxbillcontemptvote-26mar01-309",
-    "kxrainseam-26feb-3"
+    "kxfomcdissentcount-26mar-0",
+    "kxfedmention-26mar-unce",
+    "kxeoweek-26feb28-1",
+    "kxrainmiam-26feb-1",
+    "kxdhsfund-26mar01"
   ],
   "positions": {},
-  "timestamp": "2026-02-23T18:01:25.127064"
+  "timestamp": "2026-02-23T19:01:12.857461"
 }
