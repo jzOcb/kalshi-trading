@@ -1,14 +1,14 @@
 {
   "series": [
-    "kxfedmention-26mar-gas",
     "kxfedmention-26mar-gold",
-    "kxaaagasw-26mar02-2.978",
-    "kxtrumpendorse-26sep15-jcor",
-    "kxu3-26feb",
     "kxfedmention-26mar-nati",
-    "kxrainmiam-26feb-3",
-    "kxbillcontemptvote-26mar01-309"
+    "kxbillcontemptvote-26mar01-390",
+    "kxbillcontemptvote-26mar01-284",
+    "kxue-br26feb-5.1",
+    "kxue-br26feb-5.2",
+    "kxpayrolls-26feb",
+    "kxrainmiam-26feb-3"
   ],
   "positions": {},
-  "timestamp": "2026-02-26T20:01:11.896900"
+  "timestamp": "2026-02-26T21:01:15.128444"
 }
