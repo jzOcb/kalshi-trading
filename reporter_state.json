@@ -1,14 +1,14 @@
 {
   "series": [
-    "kxue-br26feb-5.2",
-    "kxfedmention-26mar-gold",
-    "kxpayrolls-26feb",
-    "kxfedmention-26mar-gas",
+    "kxue-br26feb-5.1",
     "kxbillclintonpublic-26mar01",
-    "kxrainmiam-26feb-1",
+    "kxu3-26feb",
+    "kxfedmention-26mar-gas",
     "kxrainseam-26feb-7",
-    "kxipoanduril-26mar01"
+    "kxue-br26feb-5.2",
+    "kxrainseam-26feb-3",
+    "kxfedmention-26mar-gold"
   ],
   "positions": {},
-  "timestamp": "2026-02-27T15:01:10.491704"
+  "timestamp": "2026-02-27T16:01:07.937773"
 }
