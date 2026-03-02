@@ -1,13 +1,14 @@
 {
   "series": [
-    "kxpayrolls-26mar",
-    "kxfeddissent-26mar-neel",
-    "kxue-br26feb-5.1",
-    "kxfedmention-26mar-adp",
+    "kxinx-26mar06h1600-b7187",
+    "kxinx-26mar06h1600-b7162",
+    "kxxrpd-26mar0617",
     "kxfeddissent-26mar-step",
-    "kxue-br26feb-5.2",
-    "kxfedmention-26mar-pard"
+    "kxinx-26mar06h1600-b7112",
+    "kxnasdaq100-26mar06h1600",
+    "kxfeddissent-26mar-neel",
+    "kxue-br26feb-5.2"
   ],
   "positions": {},
-  "timestamp": "2026-03-02T19:01:10.102338"
+  "timestamp": "2026-03-02T23:01:12.308396"
 }
