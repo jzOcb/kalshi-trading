@@ -1,12 +1,13 @@
 {
   "series": [
-    "kxpayrolls-26feb-t-25000",
+    "kxpayrolls-26mar",
     "kxfeddissent-26mar-neel",
-    "kxu3-26feb",
     "kxue-br26feb-5.1",
+    "kxfedmention-26mar-adp",
     "kxfeddissent-26mar-step",
-    "kxue-br26feb-5.2"
+    "kxue-br26feb-5.2",
+    "kxfedmention-26mar-pard"
   ],
   "positions": {},
-  "timestamp": "2026-03-02T15:01:07.198307"
+  "timestamp": "2026-03-02T19:01:10.102338"
 }
