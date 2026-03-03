@@ -1,14 +1,14 @@
 {
   "series": [
-    "kxfedmention-26mar-unch",
-    "kxue-br26feb-5.1",
-    "kxaaagasw-26mar09-3.010",
-    "kxue-br26feb-5.2",
-    "kxfedmention-26mar-stag",
-    "kxfedmention-26mar-nati",
+    "kxfedmention-26mar-pard",
     "kxfeddissent-26mar-step",
-    "kxfeddissent-26mar-neel"
+    "kxfeddissent-26mar-neel",
+    "kxaaagasw-26mar09-3.070",
+    "kxfedmention-26mar-nati",
+    "kxfedmention-26mar-soft",
+    "kxfedmention-26mar-gold",
+    "kxue-br26feb-5.1"
   ],
   "positions": {},
-  "timestamp": "2026-03-03T19:01:13.945359"
+  "timestamp": "2026-03-03T23:01:15.592105"
 }
