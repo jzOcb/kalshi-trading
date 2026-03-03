@@ -1,14 +1,14 @@
 {
   "series": [
-    "kxinx-26mar06h1600-b7187",
-    "kxinx-26mar06h1600-b7162",
-    "kxxrpd-26mar0617",
+    "kxue-br26feb-5.1",
+    "kxfedmention-26mar-unch",
     "kxfeddissent-26mar-step",
-    "kxinx-26mar06h1600-b7112",
-    "kxnasdaq100-26mar06h1600",
+    "kxfedmention-26mar-stag",
     "kxfeddissent-26mar-neel",
-    "kxue-br26feb-5.2"
+    "kxue-br26feb-5.2",
+    "kxaaagasw-26mar09-3.010",
+    "kxfedmention-26mar-citr"
   ],
   "positions": {},
-  "timestamp": "2026-03-02T23:01:12.308396"
+  "timestamp": "2026-03-03T15:01:11.177033"
 }
