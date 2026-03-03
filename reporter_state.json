@@ -1,14 +1,14 @@
 {
   "series": [
-    "kxue-br26feb-5.1",
     "kxfedmention-26mar-unch",
-    "kxfeddissent-26mar-step",
-    "kxfedmention-26mar-stag",
-    "kxfeddissent-26mar-neel",
-    "kxue-br26feb-5.2",
+    "kxue-br26feb-5.1",
     "kxaaagasw-26mar09-3.010",
-    "kxfedmention-26mar-citr"
+    "kxue-br26feb-5.2",
+    "kxfedmention-26mar-stag",
+    "kxfedmention-26mar-nati",
+    "kxfeddissent-26mar-step",
+    "kxfeddissent-26mar-neel"
   ],
   "positions": {},
-  "timestamp": "2026-03-03T15:01:11.177033"
+  "timestamp": "2026-03-03T19:01:13.945359"
 }
