@@ -1,14 +1,14 @@
 {
   "series": [
-    "kxfedmention-26mar-stag",
-    "kxue-chn26feb-5.1",
-    "kxdhsfund-26mar10",
-    "kxh100mon-26mar31-1.470",
-    "kxue-br26feb-5.1",
     "kxfedmention-26mar-anch",
+    "kxue-br26feb-5.1",
+    "kxfedmention-26mar-reno",
+    "kxdhsfund-26mar10",
     "kxfeddissent-26mar-neel",
-    "kxfedmention-26mar-adp"
+    "kxue-br26feb-5.3",
+    "kxfedmention-26mar-nati",
+    "kxfedmention-26mar-balar"
   ],
   "positions": {},
-  "timestamp": "2026-03-04T23:01:11.553608"
+  "timestamp": "2026-03-05T15:01:27.192349"
 }
