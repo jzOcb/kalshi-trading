@@ -1,14 +1,14 @@
 {
   "series": [
-    "kxsurvivormention-26mar12-puzz",
-    "kxfedmention-26mar-gold",
-    "kxaaagasw-26mar09-3.330",
-    "kxfeddissent-26mar-neel",
+    "kxfedmention-26mar-stag",
+    "kxfedmention-26mar-anch",
+    "kxfedmention-26mar-pard",
+    "kxfeddissent-26mar-chri",
+    "kxaaagasw-26mar09-3.040",
     "kxue-br26feb-5.1",
-    "kxue-br26feb-5.3",
-    "kxaaagasw-26mar09-3.320",
-    "kxfedmention-26mar-anch"
+    "kxaaagasw-26mar09-3.020",
+    "kxfedmention-26mar-gold"
   ],
   "positions": {},
-  "timestamp": "2026-03-05T23:01:21.765411"
+  "timestamp": "2026-03-06T15:01:14.405069"
 }
